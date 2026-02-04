@@ -1,0 +1,43 @@
+﻿.center-div {
+    width: 75%;
+    height: 75%;
+
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    margin: auto;
+}
+body {
+    background: black;
+}
+* {
+    color: white;
+}
+h1 {
+    font-size: 72px;
+    text-align: center;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    font-variation-settings:
+            "wdth" 100;
+}
+
+.error-text {
+    font-size: 24px;
+    font-family: "Roboto", sans-serif;
+    font-weight: 200;
+    padding-left: 20%;
+    font-variation-settings:
+            "wdth" 100;
+}
+.error-code {
+    color: #aaaaaa;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    bottom: 0;
+}

@@ -19,5 +19,11 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
       <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <Content CopyToOutputDirectory="Always" Update="Pages" />
+        <Content CopyToOutputDirectory="Always" Update="Static" />
+    </ItemGroup>
+
 
 </Project>
