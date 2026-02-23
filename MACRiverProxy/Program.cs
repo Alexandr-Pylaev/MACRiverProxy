@@ -1,7 +1,9 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using MACRiverProxy;
+using MACRiverProxy.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +23,9 @@ internal class Program
         {
             ser.WriteTo.Console();
         });
-
+        builder.Services.AddSingleton<TokenStorage>();
+        builder.Services.AddHttpContextAccessor();  
+        
         #endregion
 
         #region App builder auth setup
@@ -33,7 +37,7 @@ internal class Program
                 options.LogoutPath = "/logout";
             });
 
-        builder.Services.AddAuthorization(options =>
+        builder.Services.AddAuthorization((options, sp) =>
         {
             options.AddPolicy("none", policyBuilder =>
             {
@@ -41,7 +45,9 @@ internal class Program
             });
             options.AddPolicy("restricted", policyBuilder =>
             {
-                policyBuilder.RequireAuthenticatedUser();
+                policyBuilder.RequireAuthenticatedUser().RequireAssertion( context => sp.GetService<TokenStorage>()?
+                        .CheckToken(sp.GetService<IHttpContextAccessor>()?.HttpContext.User.FindFirst("Token")
+                            .ToToken()) ?? false);
             });
         });
 
@@ -60,19 +66,20 @@ internal class Program
         #region Login pages
 
         app.MapGet("/login", (context) => context.Request.HttpContext.
-            SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new Claim("test", "100")], CookieAuthenticationDefaults.AuthenticationScheme))));
+            SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new BaseToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
         app.MapGet("/logout", (context) =>
         {
             return context.Request.HttpContext.SignOutAsync();
         });
-        app.MapGet("test", async context => 
-            context.Response.ThrowError(HttpStatusCode.Forbidden));
+        app.MapGet("test", async (context) =>
+        {
+            context.Response.ThrowError(HttpStatusCode.Forbidden);
+            Log.Information(JsonSerializer.Serialize(context.User.Claims.Select(x => x.Value)));
+        });
 
         #endregion
 
         #region App setup
-
-
 
         app.MapReverseProxy();
         app.UseSerilogRequestLogging();

@@ -7,9 +7,9 @@ namespace MACRiverProxy.Auth;
 public abstract class Token
 {
     public abstract string AuthMethod { get; }
-    public byte MACLevel;
-    public ulong MACCategory;
-    public byte[] AuthPayload;
+    public byte MACLevel { get; set; } = 0;
+    public ulong MACCategory { get; set; }= 0;
+    public byte[] AuthPayload { get; set; }
 
     public void SetMACCategory(byte number, bool state)
     {
