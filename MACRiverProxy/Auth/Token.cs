@@ -1,0 +1,47 @@
+﻿using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace MACRiverProxy.Auth;
+
+public abstract class Token
+{
+    public abstract string AuthMethod { get; }
+    public byte MACLevel;
+    public ulong MACCategory;
+    public byte[] AuthPayload;
+
+    public void SetMACCategory(byte number, bool state)
+    {
+        if (number > 64) throw new ArgumentOutOfRangeException("number", "Maximum category number is 64.");
+
+        if (state)
+        {
+            MACCategory |= 1ul << number;
+        }
+        else
+        {
+            MACCategory &= ~(1ul << number);
+        }
+    }
+
+    public void AddMACCategory(byte number) => SetMACCategory(number, true);
+    public void RemoveMACCategory(byte number) => SetMACCategory(number, true);
+
+    public void AddMACLevel(byte level)
+    {
+        if (MACLevel < level) MACLevel = level;
+    }
+
+    public void RemoveMACLevel(byte level)
+    {
+        if (MACLevel > level) MACLevel = level;
+    }
+
+    public Claim AsClaim()
+    {
+        return new Claim("Token", JsonSerializer.Serialize(this));
+    }
+
+    public abstract bool VerifyToken();
+}
