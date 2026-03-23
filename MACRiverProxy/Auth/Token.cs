@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace MACRiverProxy.Auth;
 
-public sealed class Token(string provider)
+public sealed class Token(string authMethod)
 {
     public int Id { get; set; }
-    public string AuthMethod { get; set; } = provider;
+    public string AuthMethod { get; set; } = authMethod;
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; } = [];
