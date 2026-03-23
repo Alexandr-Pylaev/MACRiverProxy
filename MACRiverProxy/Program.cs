@@ -46,7 +46,7 @@ internal class Program
             options.AddPolicy("restricted", policyBuilder =>
             {
                 policyBuilder.RequireAuthenticatedUser().RequireAssertion( context => sp.GetService<TokenStorage>()?
-                        .CheckToken(sp.GetService<IHttpContextAccessor>()?.HttpContext.User.FindFirst("Token")
+                        .CheckToken(sp.GetService<IHttpContextAccessor>()!.HttpContext?.User.FindFirst("Token")?
                             .ToToken()) ?? false);
             });
         });
