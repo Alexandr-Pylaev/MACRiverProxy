@@ -66,7 +66,7 @@ internal class Program
         #region Login pages
 
         app.MapGet("/login", (context) => context.Request.HttpContext.
-            SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new BaseToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
+            SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new DebugToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
         app.MapGet("/logout", (context) =>
         {
             return context.Request.HttpContext.SignOutAsync();
