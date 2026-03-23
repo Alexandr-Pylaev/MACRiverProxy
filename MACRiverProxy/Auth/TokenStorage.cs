@@ -1,8 +1,13 @@
-﻿namespace MACRiverProxy.Auth;
+﻿using Microsoft.EntityFrameworkCore;
 
-public class TokenStorage
+namespace MACRiverProxy.Auth;
+
+public class TokenStorage : DbContext
 {
-    protected List<Token> ActiveTokens = new List<Token>();
+    protected DbSet<Token> ActiveTokens { get; set; }
+    public string DbPath { get; } = Path.Combine(Directory.GetCurrentDirectory(), "tokenstorage.db");
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+        => options.UseSqlite($"Data Source={DbPath}");
 
     public Token[] GetAllTokens()
     {
