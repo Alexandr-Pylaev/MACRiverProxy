@@ -1,18 +1,16 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace MACRiverProxy.Auth;
 
-[JsonPolymorphic(
-    UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToNearestAncestor, TypeDiscriminatorPropertyName = "AuthMethod")]
-[JsonDerivedType(typeof(NullToken), "null")]
-public abstract partial class Token(DateTime expireTime)
+public sealed class Token(string provider, DateTime expireTime)
 {
+    public int Id { get; set; }
+    public string AuthMethod { get; set; } = provider;
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; } = [];
-    public DateTime ExpireTime { get; init; } = expireTime;
+    public DateTime ExpireTime { get; set; } = expireTime;
 
     public void SetMACCategory(byte number, bool state)
     {
@@ -46,6 +44,5 @@ public abstract partial class Token(DateTime expireTime)
         return new Claim(TOKEN_CLAIM_NAME, JsonSerializer.Serialize(this));
     }
 
-    public abstract bool VerifyToken();
     public const string TOKEN_CLAIM_NAME = "Token";
 }
