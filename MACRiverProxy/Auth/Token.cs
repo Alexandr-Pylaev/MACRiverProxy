@@ -43,8 +43,9 @@ public abstract partial class Token(DateTime expireTime)
 
     public Claim AsClaim()
     {
-        return new Claim("Token", JsonSerializer.Serialize(this));
+        return new Claim(TOKEN_CLAIM_NAME, JsonSerializer.Serialize(this));
     }
 
     public abstract bool VerifyToken();
+    public const string TOKEN_CLAIM_NAME = "Token";
 }
