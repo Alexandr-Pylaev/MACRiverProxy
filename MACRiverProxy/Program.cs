@@ -73,10 +73,10 @@ internal class Program
 
         #region Login pages
 
-        app.MapGet("/login", (context) => context.Request.HttpContext.
-            SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new DebugTokenProvider().CreateToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
+        app.MapGet("/login", (context) => MACAuthentication.Singleton.SignIn(context,
+            context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddMinutes(5)));
         app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, 
-            context.RequestServices.GetService<TokenStorage>()));
+            context.RequestServices.GetService<TokenStorage>()!));
         #if DEBUG
         app.MapGet("/test/error", async (context) =>
         {
