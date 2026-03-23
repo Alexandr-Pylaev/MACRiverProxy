@@ -5,8 +5,8 @@ namespace MACRiverProxy.Auth;
 
 public static class ClaimStatic
 {
-    public static Token ToToken(this Claim claim)
+    public static Token ToToken(this Claim? claim)
     {
-        return JsonSerializer.Deserialize<Token>(claim.Value)!;
+        return JsonSerializer.Deserialize<Token>(claim?.Value ?? "{}")!;
     }
 }
