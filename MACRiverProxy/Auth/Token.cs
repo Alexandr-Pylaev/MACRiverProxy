@@ -4,9 +4,11 @@ using System.Text.Json.Serialization;
 
 namespace MACRiverProxy.Auth;
 
-public abstract class Token
+[JsonPolymorphic(
+    UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToNearestAncestor, TypeDiscriminatorPropertyName = "AuthMethod")]
+[JsonDerivedType(typeof(NullToken), "null")]
+public abstract partial class Token
 {
-    public abstract string AuthMethod { get; }
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; }
