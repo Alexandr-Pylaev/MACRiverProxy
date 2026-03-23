@@ -57,7 +57,7 @@ public class TokenStorage : DbContext
         if (token is null) return false;
         lock (ActiveTokens)
         {
-            return ActiveTokens.Contains(token) && token!.VerifyToken();
+            return ActiveTokens.Contains(token) && token!.ExpireTime <= DateTime.Now &&  token!.VerifyToken();
         }
     }
 }

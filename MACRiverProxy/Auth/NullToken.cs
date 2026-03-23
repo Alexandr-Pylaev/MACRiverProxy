@@ -6,7 +6,7 @@
 /// </summary>
 /// <remarks>Always returns false on verify.</remarks>
 
-public sealed class NullToken : Token
+public sealed class NullToken() : Token(DateTime.Now)
 {
     public override bool VerifyToken() => false;
 }

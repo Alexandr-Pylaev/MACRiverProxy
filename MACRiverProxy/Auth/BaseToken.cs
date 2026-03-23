@@ -10,7 +10,7 @@ public abstract partial class Token {}
 /// <remarks>Use only in debug environment!</remarks>
 public class DebugToken : Token
 {
-    public DebugToken()
+    public DebugToken() : base(DateTime.MaxValue)
     {
         AuthPayload = ""u8.ToArray();
         MACCategory = uint.MaxValue;
