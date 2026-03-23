@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 internal class Program
@@ -28,7 +29,7 @@ internal class Program
         builder.Services.AddHttpContextAccessor();  
         
         #endregion
-
+        
         #region App builder auth setup
 
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -62,6 +63,8 @@ internal class Program
         #endregion
 
         app = builder.Build();
+        
+        app.Services.GetService<TokenStorage>()?.Database.Migrate();
 
         #region App auth setup
         app.MapStaticAssets().ShortCircuit();
