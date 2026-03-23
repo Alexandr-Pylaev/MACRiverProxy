@@ -1,12 +1,14 @@
-﻿namespace MACRiverProxy.Auth;
+﻿using System.Text.Json.Serialization;
 
+namespace MACRiverProxy.Auth;
+
+[JsonDerivedType(typeof(BaseToken), typeDiscriminator:"BaseToken")]
+public abstract partial class Token {}
 public class BaseToken : Token
 {
-    public override string AuthMethod => "BaseToken";
-
     public BaseToken()
     {
-        AuthPayload = "hello"u8.ToArray();
+        AuthPayload = ""u8.ToArray();
         MACCategory = uint.MaxValue;
         MACLevel = 255;
     }
