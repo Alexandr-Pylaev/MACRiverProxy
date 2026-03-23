@@ -2,11 +2,15 @@
 
 namespace MACRiverProxy.Auth;
 
-[JsonDerivedType(typeof(BaseToken), typeDiscriminator:"BaseToken")]
+[JsonDerivedType(typeof(DebugToken), typeDiscriminator:nameof(DebugToken))]
 public abstract partial class Token {}
-public class BaseToken : Token
+/// <summary>
+/// Debug-only token for testing. Always return true in debug and always false in release configuration.
+/// </summary>
+/// <remarks>Use only in debug environment!</remarks>
+public class DebugToken : Token
 {
-    public BaseToken()
+    public DebugToken()
     {
         AuthPayload = ""u8.ToArray();
         MACCategory = uint.MaxValue;
@@ -14,6 +18,12 @@ public class BaseToken : Token
     }
     public override bool VerifyToken()
     {
-        return true;
+        return
+#if DEBUG
+            true
+#else
+            false
+#endif
+            ;
     }
 }
