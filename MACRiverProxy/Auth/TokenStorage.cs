@@ -47,11 +47,12 @@ public class TokenStorage
         }
     }
 
-    public bool CheckToken(Token token)
+    public bool CheckToken(Token? token)
     {
+        if (token is null) return false;
         lock (ActiveTokens)
         {
-            return ActiveTokens.Contains(token) && token.VerifyToken();
+            return ActiveTokens.Contains(token) && token!.VerifyToken();
         }
     }
 }
