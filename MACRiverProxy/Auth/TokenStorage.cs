@@ -60,4 +60,19 @@ public class TokenStorage : DbContext
             return ActiveTokens.Contains(token) && token!.ExpireTime <= DateTime.Now &&  token!.VerifyToken();
         }
     }
+    /// <summary>
+    /// Clean-ups all invalid tokens from storage
+    /// </summary>
+    public void TokenStorageCleanup()
+    {
+        lock (ActiveTokens)
+        {
+            List<Token> invalidTokens = new();
+            foreach (var token in ActiveTokens)
+            {
+                if (!CheckToken(token))invalidTokens.Add(token);
+            }
+            ActiveTokens.RemoveRange(invalidTokens);
+        }
+    }
 }
