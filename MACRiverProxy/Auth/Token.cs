@@ -1,16 +1,17 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MACRiverProxy.Auth;
 
-public sealed class Token(string provider, DateTime expireTime)
+public sealed class Token(string provider)
 {
     public int Id { get; set; }
     public string AuthMethod { get; set; } = provider;
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; } = [];
-    public DateTime ExpireTime { get; set; } = expireTime;
+    [JsonIgnore] public TokenKey? TokenKey;
 
     public void SetMACCategory(byte number, bool state)
     {
