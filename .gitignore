@@ -489,3 +489,5 @@ riderModule.iml
 
 # appsettings may contain sensitive data
 **/appsettings**.json
+
+**/tokenstorage.db
