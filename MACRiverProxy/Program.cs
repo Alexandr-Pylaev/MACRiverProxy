@@ -24,6 +24,7 @@ internal class Program
             ser.WriteTo.Console();
         });
         builder.Services.AddSingleton<TokenStorage>();
+        builder.Services.AddSingleton<MACAuthentication>();
         builder.Services.AddHttpContextAccessor();  
         
         #endregion
@@ -46,7 +47,7 @@ internal class Program
             options.AddPolicy("restricted", policyBuilder =>
             {
                 policyBuilder.RequireAuthenticatedUser().RequireAssertion( context => sp.GetService<TokenStorage>()?
-                        .CheckToken(sp.GetService<IHttpContextAccessor>()!.HttpContext?.User.FindFirst("Token")?
+                        .CheckToken(sp.GetService<IHttpContextAccessor>()!.HttpContext?.User.FindFirst(Token.TOKEN_CLAIM_NAME)?
                             .ToToken()) ?? false);
             });
         });
@@ -67,10 +68,7 @@ internal class Program
 
         app.MapGet("/login", (context) => context.Request.HttpContext.
             SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new DebugToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
-        app.MapGet("/logout", (context) =>
-        {
-            return context.Request.HttpContext.SignOutAsync();
-        });
+        app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, context.RequestServices.GetService<TokenStorage>()));
         #if DEBUG
         app.MapGet("/test/error", async (context) =>
         {
