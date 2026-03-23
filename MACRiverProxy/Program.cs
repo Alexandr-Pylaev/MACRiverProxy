@@ -46,9 +46,16 @@ internal class Program
             });
             options.AddPolicy("restricted", policyBuilder =>
             {
-                policyBuilder.RequireAuthenticatedUser().RequireAssertion( context => sp.GetService<TokenStorage>()?
-                        .CheckToken(sp.GetService<IHttpContextAccessor>()!.HttpContext?.User.FindFirst(Token.TOKEN_CLAIM_NAME)?
-                            .ToToken()) ?? false);
+                policyBuilder.RequireAuthenticatedUser().RequireAssertion( context =>
+                {
+                    var tokenStorage = sp.GetService<TokenStorage>();
+                    var token = sp.GetService<IHttpContextAccessor>()!.HttpContext?.User
+                        .FindFirst(Token.TOKEN_CLAIM_NAME)?
+                        .ToToken();
+                    return (tokenStorage?
+                        .CheckToken(token
+                            ?.TokenKey)?? false) && (token?.CreateTokenProvider().VerifyToken(token)?? false) ;
+                });
             });
         });
 
@@ -68,7 +75,8 @@ internal class Program
 
         app.MapGet("/login", (context) => context.Request.HttpContext.
             SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new DebugTokenProvider().CreateToken().AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme))));
-        app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, context.RequestServices.GetService<TokenStorage>()));
+        app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, 
+            context.RequestServices.GetService<TokenStorage>()));
         #if DEBUG
         app.MapGet("/test/error", async (context) =>
         {
