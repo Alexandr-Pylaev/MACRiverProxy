@@ -71,12 +71,12 @@ internal class Program
         {
             return context.Request.HttpContext.SignOutAsync();
         });
-        app.MapGet("test", async (context) =>
+        #if DEBUG
+        app.MapGet("/test/error", async (context) =>
         {
-            context.Response.ThrowError(HttpStatusCode.Forbidden);
-            Log.Information(JsonSerializer.Serialize(context.User.Claims.Select(x => x.Value)));
+            context.Response.ThrowError(HttpStatusCode.InternalServerError);
         });
-
+        #endif
         #endregion
 
         #region App setup
