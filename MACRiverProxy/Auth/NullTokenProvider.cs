@@ -12,5 +12,5 @@ public class NullTokenProvider : TokenProvider
     {
         return false;
     }
-    public static Token CreateNull() => new Token(NullTokenProvider.TokenProviderName, DateTime.MinValue);
+    public static Token CreateNull() => new Token(NullTokenProvider.TokenProviderName);
 }

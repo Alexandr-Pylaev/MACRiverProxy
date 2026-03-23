@@ -11,7 +11,7 @@ public class DebugTokenProvider : TokenProvider
     public const string TokenProviderName = "DEBUG";
     public Token CreateToken()
     {
-        return new Token(TokenProviderName, DateTime.MinValue);
+        return new Token(TokenProviderName);
     }
 
     public override bool VerifyToken(Token token)
