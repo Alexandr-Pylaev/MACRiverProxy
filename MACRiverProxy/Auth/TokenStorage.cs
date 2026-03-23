@@ -9,29 +9,9 @@ public class TokenStorage : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
 
-    public Token[] GetAllTokens()
-    {
-        lock (ActiveTokens)
-        {
-            return ActiveTokens.ToArray();
-        }
-    }
+    public void RegisterToken(Token token) => RegisterTokens([token]);
 
-    public void RegisterToken(Token token)
-    {
-        lock (ActiveTokens)
-        {
-            ActiveTokens.Add(token);
-        }
-    }
-
-    public void RevokeToken(Token token)
-    {
-        lock (ActiveTokens)
-        {
-            ActiveTokens.Remove(token);
-        }
-    }
+    public void RevokeToken(Token token) => RevokeTokens([token]);
 
     public void RegisterTokens(params Token[] tokens)
     {
@@ -39,6 +19,8 @@ public class TokenStorage : DbContext
         {
             ActiveTokens.AddRange(tokens);
         }
+
+        this.SaveChanges();
     }
 
     public void RevokeTokens(params Token[] tokens)
@@ -50,6 +32,7 @@ public class TokenStorage : DbContext
                 ActiveTokens.Remove(token);
             }
         }
+        this.SaveChanges();
     }
 
     public bool CheckToken(Token? token)
@@ -72,7 +55,7 @@ public class TokenStorage : DbContext
             {
                 if (!CheckToken(token))invalidTokens.Add(token);
             }
-            ActiveTokens.RemoveRange(invalidTokens);
+            RevokeTokens(invalidTokens.ToArray());
         }
     }
 }
