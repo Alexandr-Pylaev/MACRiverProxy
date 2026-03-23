@@ -12,10 +12,9 @@ public abstract partial class Token
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; }
-
     public void SetMACCategory(byte number, bool state)
     {
-        if (number > 64) throw new ArgumentOutOfRangeException("number", "Maximum category number is 64.");
+        if (number > 64) throw new ArgumentOutOfRangeException(nameof(number), "Maximum category number is 64.");
 
         if (state)
         {
