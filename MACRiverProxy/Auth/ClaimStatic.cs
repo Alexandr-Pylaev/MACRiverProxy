@@ -7,9 +7,17 @@ public static class ClaimStatic
 {
     public static Token ToToken(this Claim? claim)
     {
-        return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(new NullToken()), new JsonSerializerOptions()
+        try
         {
-            AllowOutOfOrderMetadataProperties = true
-        })!;
+            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(new NullToken()),
+                new JsonSerializerOptions()
+                {
+                    AllowOutOfOrderMetadataProperties = true
+                })!;
+        }
+        catch (JsonException _)
+        {
+            return new NullToken();
+        }
     }
 }
