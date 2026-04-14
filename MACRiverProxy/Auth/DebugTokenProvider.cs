@@ -8,10 +8,9 @@ namespace MACRiverProxy.Auth;
 /// <remarks>Use only in debug environment!</remarks>
 public class DebugTokenProvider : TokenProvider
 {
-    public const string TokenProviderName = "DEBUG";
     public Token CreateToken()
     {
-        return new Token(TokenProviderName);
+        return new Token(this.TokenProviderName);
     }
 
     public override Token CreateToken(params dynamic[]? args) => CreateToken();

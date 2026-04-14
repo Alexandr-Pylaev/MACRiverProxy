@@ -9,7 +9,7 @@ public static class ClaimStatic
     {
         try
         {
-            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(NullTokenProvider.CreateNull()),
+            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(NullTokenProvider.Singleton.CreateToken()),
                 new JsonSerializerOptions()
                 {
                     AllowOutOfOrderMetadataProperties = true
@@ -17,7 +17,7 @@ public static class ClaimStatic
         }
         catch (JsonException _)
         {
-            return NullTokenProvider.CreateNull();
+            return NullTokenProvider.Singleton.CreateToken();
         }
     }
 }
