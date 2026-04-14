@@ -12,6 +12,29 @@ public class LocalAuthStorage : DbContext
     public async Task<LocalAuthUser> RegisterUser(string login, string password)
     {
         LocalAuthUser user = LocalAuthUser.CreateNewUser(login, password);
-        return (await Users.AddAsync(user)).Entity;
+        user = (await Users.AddAsync(user)).Entity;
+        await SaveChangesAsync();
+        return user;
     }
+
+    public async Task<LocalAuthUser?> FindUser(string login)
+    {
+        return await Users.FindAsync(login);
+    }
+
+    public async Task<LocalAuthUser?> ChangePassword(string login, string newPassword) =>
+       await ChangePassword(await FindUser(login), newPassword);
+    public async Task<LocalAuthUser?> ChangePassword(LocalAuthUser? user, string newPassword)
+    {
+        user?.SetPassword(newPassword);
+        await SaveChangesAsync();
+        return user;
+    }
+    public async Task<bool> IsUserRegistered(LocalAuthUser? user) => user is not null && await IsUserRegistered(user.Login);
+    public async Task<bool> IsUserRegistered(string login) => (await FindUser(login)) is not null;
+
+    public async Task<bool> VerifyPassword(string login, string password) =>
+        await VerifyPassword(await FindUser(login), password);
+    public async Task<bool> VerifyPassword(LocalAuthUser? user, string password) =>
+        await IsUserRegistered(user) && (user?.VerifyPassword(password) ?? false);
 }
