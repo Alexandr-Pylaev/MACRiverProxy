@@ -6,12 +6,26 @@ namespace MACRiverProxy.Auth;
 
 public sealed class Token(string authMethod)
 {
-    public int Id { get; set; }
+    public string Id { get; private set; }
+    public DateTime ExpireTime { get; private set; }
     public string AuthMethod { get; set; } = authMethod;
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; } = [];
-    [JsonIgnore] public TokenKey? TokenKey;
+
+    [JsonIgnore]
+    public TokenKey? TokenKey
+    {
+        get => _tokenKey;
+        set
+        {
+            Id = value.Key;
+            ExpireTime = value.ExpireTime;
+            _tokenKey = value;
+        }
+    }
+
+    private TokenKey? _tokenKey;
 
     public void SetMACCategory(byte number, bool state)
     {
