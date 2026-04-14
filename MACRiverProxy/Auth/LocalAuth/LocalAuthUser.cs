@@ -1,14 +1,28 @@
-﻿namespace MACRiverProxy.Auth.LocalAuth;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MACRiverProxy.Auth.LocalAuth;
 
 public class LocalAuthUser : IMAC
 {
     private const string PASSWORD_PEPPER = "f9gfbnd98";
     public static readonly int MAX_PASSWORD_LENGTH = 72 - (PASSWORD_PEPPER.Length);
+    [Key]
     public string Login { get; set; }
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
     public string PasswordHash { get; protected set; }
 
+    public static LocalAuthUser CreateNewUser(string login, string password)
+    {
+        var user = new LocalAuthUser()
+        {
+            Login = login
+        };
+        user.SetPassword(password);
+        return user;
+    }
+    
     public void SetPassword(string password)
     {
         if (password.Length > MAX_PASSWORD_LENGTH)
