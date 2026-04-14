@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace MACRiverProxy.Auth;
+﻿namespace MACRiverProxy.Auth.Tokens;
 
 /// <summary>
 /// Fallback provider for token. Always returns false.

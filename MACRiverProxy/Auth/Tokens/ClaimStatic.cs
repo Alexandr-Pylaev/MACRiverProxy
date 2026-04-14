@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.Tokens;
 
 public static class ClaimStatic
 {

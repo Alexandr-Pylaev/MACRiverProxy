@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.Tokens;
 
 public class TokenStorage : DbContext
 {

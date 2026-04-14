@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.Tokens;
 
 public sealed class Token(string authMethod)
 {

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
