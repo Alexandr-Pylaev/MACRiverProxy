@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace MACRiverProxy.Auth;
+﻿namespace MACRiverProxy.Auth.Tokens;
 
 /// <summary>
 /// Debug-only token provider for testing. Always return true in debug and always false in release configuration.

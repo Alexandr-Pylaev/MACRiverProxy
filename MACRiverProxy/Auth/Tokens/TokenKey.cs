@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.Tokens;
 
 public class TokenKey
 {

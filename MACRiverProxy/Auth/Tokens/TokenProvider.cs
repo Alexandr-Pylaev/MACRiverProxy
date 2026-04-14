@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.Tokens;
 
 public abstract class TokenProvider
 {
