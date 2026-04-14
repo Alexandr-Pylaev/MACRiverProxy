@@ -9,9 +9,9 @@ public class MACAuthentication
     private static Lazy<MACAuthentication> _singleton = new();
     public static MACAuthentication Singleton => _singleton.Value;
 
-    public async Task SignIn(HttpContext context, TokenStorage tokenStorage, DateTime expires)
+    public async Task SignIn(HttpContext context, TokenProvider provider, TokenStorage tokenStorage, DateTime expires)
     {
-        var token = new DebugTokenProvider().CreateToken();
+        var token = provider.CreateToken();
         tokenStorage.RegisterToken(expires, token);
         await context.Request.HttpContext.SignInAsync(
             new ClaimsPrincipal(
