@@ -7,12 +7,13 @@ namespace MACRiverProxy.Auth;
 /// </summary>
 public class NullTokenProvider : TokenProvider
 {
-    public const string TokenProviderName = "null";
-    public override Token CreateToken(params dynamic[]? args) => CreateNull();
+    // ReSharper disable once StaticMemberInitializerReferesToMemberBelow
+    public static NullTokenProvider Singleton = _singleton!.Value;
+    private static Lazy<NullTokenProvider> _singleton = new();
+    public override Token CreateToken(params dynamic[]? args) => new Token(this.TokenProviderName);
 
     public override bool VerifyToken(Token token)
     {
         return false;
     }
-    public static Token CreateNull() => new Token(NullTokenProvider.TokenProviderName);
 }
