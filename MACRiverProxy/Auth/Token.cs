@@ -28,7 +28,7 @@ public sealed class Token(string authMethod)
     }
 
     public void AddMACCategory(byte number) => SetMACCategory(number, true);
-    public void RemoveMACCategory(byte number) => SetMACCategory(number, true);
+    public void RemoveMACCategory(byte number) => SetMACCategory(number, false);
 
     public void AddMACLevel(byte level)
     {
