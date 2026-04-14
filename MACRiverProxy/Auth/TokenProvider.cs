@@ -4,6 +4,7 @@ namespace MACRiverProxy.Auth;
 
 public abstract class TokenProvider
 {
+    public abstract Token CreateToken(params dynamic[]? args);
     public abstract bool VerifyToken(Token token);
     public static Token Empty => NullTokenProvider.CreateNull();
 }
