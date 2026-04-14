@@ -19,7 +19,12 @@ public class MACAuthentication
     }
     public async Task SignOut(HttpContext context, TokenStorage tokenStorage)
     {
-        tokenStorage.RevokeToken(context.User.FindFirst(Token.TOKEN_CLAIM_NAME).ToToken());
+        SignOut(context.User.FindFirst(Token.TOKEN_CLAIM_NAME).ToToken(), tokenStorage);
         await context.SignOutAsync();
+    }
+
+    public void SignOut(Token token, TokenStorage tokenStorage)
+    {
+        tokenStorage.RevokeToken(token);
     }
 }
