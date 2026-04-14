@@ -4,13 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace MACRiverProxy.Auth.Tokens;
 
-public sealed class Token(string authMethod)
+public sealed class Token(string authMethod) : IMAC
 {
     public string Id { get; private set; }
     public DateTime ExpireTime { get; private set; }
+    public byte MACLevel { get; set; }
+    public ulong MACCategory { get; set; }
     public string AuthMethod { get; set; } = authMethod;
-    public byte MACLevel { get; set; } = 0;
-    public ulong MACCategory { get; set; }= 0;
     public byte[] AuthPayload { get; set; } = [];
 
     [JsonIgnore]
@@ -26,33 +26,6 @@ public sealed class Token(string authMethod)
     }
 
     private TokenKey? _tokenKey;
-
-    public void SetMACCategory(byte number, bool state)
-    {
-        if (number > 64) throw new ArgumentOutOfRangeException(nameof(number), "Maximum category number is 64.");
-
-        if (state)
-        {
-            MACCategory |= 1ul << number;
-        }
-        else
-        {
-            MACCategory &= ~(1ul << number);
-        }
-    }
-
-    public void AddMACCategory(byte number) => SetMACCategory(number, true);
-    public void RemoveMACCategory(byte number) => SetMACCategory(number, false);
-
-    public void AddMACLevel(byte level)
-    {
-        if (MACLevel < level) MACLevel = level;
-    }
-
-    public void RemoveMACLevel(byte level)
-    {
-        if (MACLevel > level) MACLevel = level;
-    }
 
     public Claim AsClaim()
     {
