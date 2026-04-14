@@ -43,6 +43,13 @@ public class TokenStorage : DbContext
 
     public void RevokeTokens(params Token[] tokens) => RevokeTokens(tokens.Where(x => x.TokenKey is not null).Select(x => x.TokenKey!).ToArray());
 
+    public bool CheckToken(Token? token)
+    {
+        if (token is null) return false;
+        token.TokenKey ??= ActiveTokens.Find(token.Id);
+        return CheckToken(token.TokenKey);
+    }
+    
     public bool CheckToken(TokenKey? token)
     {
         if (token is null) return false;

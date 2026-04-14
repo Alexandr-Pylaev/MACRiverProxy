@@ -54,8 +54,7 @@ internal class Program
                         .FindFirst(Token.TOKEN_CLAIM_NAME)?
                         .ToToken();
                     return (tokenStorage?
-                        .CheckToken(token
-                            ?.TokenKey)?? false) && (token?.CreateTokenProvider().VerifyToken(token)?? false) ;
+                        .CheckToken(token)?? false) && (token?.CreateTokenProvider().VerifyToken(token)?? false) ;
                 });
             });
         });
