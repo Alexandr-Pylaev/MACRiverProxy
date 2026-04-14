@@ -8,6 +8,8 @@ namespace MACRiverProxy.Auth;
 public class NullTokenProvider : TokenProvider
 {
     public const string TokenProviderName = "null";
+    public override Token CreateToken(params dynamic[]? args) => CreateNull();
+
     public override bool VerifyToken(Token token)
     {
         return false;

@@ -14,6 +14,8 @@ public class DebugTokenProvider : TokenProvider
         return new Token(TokenProviderName);
     }
 
+    public override Token CreateToken(params dynamic[]? args) => CreateToken();
+
     public override bool VerifyToken(Token token)
     {
         return
