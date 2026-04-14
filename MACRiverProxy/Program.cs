@@ -76,7 +76,7 @@ internal class Program
 
         #region Login pages
 
-        app.MapGet("/login", (context) => MACAuthentication.Singleton.SignIn(context,
+        app.MapGet("/login", (context) => MACAuthentication.Singleton.SignIn(context, new DebugTokenProvider(),
             context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddMinutes(5)));
         app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, 
             context.RequestServices.GetService<TokenStorage>()!));
