@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using MACRiverProxy;
 using MACRiverProxy.Auth;
+using MACRiverProxy.Auth.LocalAuth;
 using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -28,6 +29,7 @@ internal class Program
         builder.Services.AddSingleton<TokenStorage>();
         builder.Services.AddSingleton<MACAuthentication>();
         builder.Services.AddHttpContextAccessor();  
+        builder.Services.AddLocalAuthTokenProvider();
         
         #endregion
         
