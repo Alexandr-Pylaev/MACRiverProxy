@@ -14,4 +14,9 @@ public class NullTokenProvider : TokenProvider
     {
         return false;
     }
+
+    public override bool DestroyToken(Token token)
+    {
+        return true;
+    }
 }

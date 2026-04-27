@@ -6,6 +6,7 @@ public abstract class TokenProvider
 {
     public abstract Token CreateToken(params dynamic[]? args);
     public abstract bool VerifyToken(Token token);
+    public abstract bool DestroyToken(Token token);
     public static Token Empty => NullTokenProvider.Singleton.CreateToken();
     protected string TokenProviderName 
     {

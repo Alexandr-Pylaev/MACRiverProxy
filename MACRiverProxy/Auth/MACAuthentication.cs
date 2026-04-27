@@ -10,22 +10,23 @@ public class MACAuthentication
     private static Lazy<MACAuthentication> _singleton = new();
     public static MACAuthentication Singleton => _singleton.Value;
 
-    public async Task SignIn(HttpContext context, TokenProvider provider, TokenStorage tokenStorage, DateTime expires)
+    public async Task SignIn(HttpContext context, TokenProvider provider, TokenStorage tokenStorage, DateTime expires, params dynamic[]? args)
     {
-        var token = provider.CreateToken();
+        var token = provider.CreateToken(args);
         tokenStorage.RegisterToken(expires, token);
         await context.Request.HttpContext.SignInAsync(
             new ClaimsPrincipal(
                 new ClaimsIdentity([token.AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme)));
     }
-    public async Task SignOut(HttpContext context, TokenStorage tokenStorage)
+    public async Task SignOut(HttpContext context, TokenStorage tokenStorage, TokenProvider provider)
     {
-        SignOut(context.User.FindFirst(Token.TOKEN_CLAIM_NAME).ToToken(), tokenStorage);
+        SignOut(context.User.FindFirst(Token.TOKEN_CLAIM_NAME).ToToken(), tokenStorage, provider);
         await context.SignOutAsync();
     }
 
-    public void SignOut(Token token, TokenStorage tokenStorage)
+    public void SignOut(Token token, TokenStorage tokenStorage, TokenProvider provider)
     {
         tokenStorage.RevokeToken(token);
+        provider.DestroyToken(token);
     }
 }
