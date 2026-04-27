@@ -32,6 +32,11 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenStor
     {
         return true;
     }
+
+    public override bool DestroyToken(Token token)
+    {
+        return true;
+    }
 }
 
 public static class LocalAuthTokenProviderStatic
