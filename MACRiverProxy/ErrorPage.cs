@@ -8,7 +8,7 @@ namespace MACRiverProxy;
 public static class ErrorPage
 {
     const string ERR_GENERIC = "ERR_GENERIC";
-    public static string ThrowError(this HttpResponse response, HttpStatusCode code = HttpStatusCode.InternalServerError, 
+    public static void ThrowError(this HttpResponse response, HttpStatusCode code = HttpStatusCode.InternalServerError, 
         string errorHeader = "Some error happened", string errorMessage = "Proxy thrown an error.\n" +
                                                                            "No additional information provided.\n\n" +
                                                                            "Contact administrator for additional help.",
@@ -42,7 +42,5 @@ public static class ErrorPage
                 response.StatusCode = ((int)HttpStatusCode.InternalServerError);
             }
         }
-
-        return "";
     }
 }
