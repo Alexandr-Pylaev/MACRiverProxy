@@ -83,22 +83,27 @@ internal class Program
         app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
         app.MapPost("/login", async (HttpContext context) =>
         {
+            bool isSuccessful = false;
             try
             {
                 if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
-                    || !context.Request.Form.TryGetValue("loginInput", out var login)) return;
-                await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
-                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), pass,login);
+                    || !context.Request.Form.TryGetValue("loginInput", out var login) 
+                    || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login)) return;
+                isSuccessful = await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
+                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), login,pass);
             }
             finally
             {
-                if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+                if (isSuccessful)
                 {
-                    context.Response.Redirect(returnUrl);
-                }
-                else
-                {
-                    context.Response.Redirect("/");
+                    if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+                    {
+                        context.Response.Redirect(returnUrl);
+                    }
+                    else
+                    {
+                        context.Response.Redirect("/");
+                    }
                 }
             }
         });
