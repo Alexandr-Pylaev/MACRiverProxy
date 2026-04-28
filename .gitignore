@@ -491,3 +491,4 @@ riderModule.iml
 **/appsettings**.json
 
 **/tokenstorage.db
+MACRiverProxy/local-auth.db
