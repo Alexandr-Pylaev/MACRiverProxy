@@ -14,7 +14,7 @@ public static class Login
         {
             Log.Information($"Sending client to login page with {code} code");
             response.StatusCode = (int)code;
-            response.WriteAsync(string.Format(File.ReadAllText("./Pages/Login.html")));
+            response.WriteAsync(File.ReadAllText("./Pages/Login.html"));
 
             isDone = true;
         }

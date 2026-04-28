@@ -45,7 +45,7 @@ public class TokenStorage : DbContext
 
     public bool CheckToken(Token? token)
     {
-        if (token is null) return false;
+        if (token is null || token == TokenProvider.Empty) return false;
         token.TokenKey ??= ActiveTokens.Find(token.Id);
         return CheckToken(token.TokenKey);
     }

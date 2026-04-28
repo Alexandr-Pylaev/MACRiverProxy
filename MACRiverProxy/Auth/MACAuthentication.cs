@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Net;
+using System.Security.Claims;
 using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,6 +14,11 @@ public class MACAuthentication
     public async Task SignIn(HttpContext context, TokenProvider provider, TokenStorage tokenStorage, DateTime expires, params dynamic[]? args)
     {
         var token = provider.CreateToken(args);
+        if (token == TokenProvider.Empty)
+        {
+            context.Response.Redirect("/login?error=Failed%20to%20verify%20info%20you%20provided.");
+            return;
+        }
         tokenStorage.RegisterToken(expires, token);
         await context.Request.HttpContext.SignInAsync(
             new ClaimsPrincipal(

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using Serilog;
 
 internal class Program
@@ -79,8 +80,28 @@ internal class Program
 
         #region Login pages
 
-        app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();}/*MACAuthentication.Singleton.SignIn(context, NullTokenProvider.Singleton,
-            context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddMinutes(5))*/);
+        app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
+        app.MapPost("/login", async (HttpContext context) =>
+        {
+            try
+            {
+                if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
+                    || !context.Request.Form.TryGetValue("loginInput", out var login)) return;
+                await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
+                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), pass,login);
+            }
+            finally
+            {
+                if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+                {
+                    context.Response.Redirect(returnUrl);
+                }
+                else
+                {
+                    context.Response.Redirect("/");
+                }
+            }
+        });
         app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, 
             context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton));
         #if DEBUG

@@ -1,4 +1,14 @@
-﻿.center-div {
+﻿.bi {
+    width: 1em;
+    height: 1em;
+    vertical-align: -.125em;
+    fill: currentcolor;
+}
+.alert {
+    display:inline-block;
+}
+
+.center-div {
     width: 75%;
     height: 75%;
 
