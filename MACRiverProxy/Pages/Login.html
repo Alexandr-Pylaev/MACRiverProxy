@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <title>MACRiver Proxy Login page</title>
@@ -17,8 +17,21 @@
         <span class="navbar-brand mb-0 h1">MACRiver Proxy</span>
     </div>
 </nav>
-<div class="container">
-    
+<div class="container vh-100 d-flex justify-content-center align-items-center">
+    <form class="w-25" action="/login">
+        <div class="mb-3">
+            <label for="loginInput" class="form-label">Login</label>
+            <input type="password" class="form-control" id="loginInput">
+        </div>
+        <div class="mb-3">
+            <label for="passwordInput" class="form-label">Password</label>
+            <input type="password" class="form-control" id="passwordInput">
+        </div>
+
+        <div class="d-flex justify-content-center align-items-center">
+            <button type="submit" class="btn btn-primary w-100">Submit</button>
+        </div>
+    </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
