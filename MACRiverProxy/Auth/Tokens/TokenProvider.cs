@@ -27,7 +27,14 @@ public static class TokenProviderStatic
 {
     public static TokenProvider CreateTokenProvider(this Token token, params object?[]? args)
     {
-        return Activator.CreateInstance(Type.GetType(token.AuthMethod + TokenProvider.TOKEN_PROVIDER_POSTFIX), args) as TokenProvider;
+        return Activator.CreateInstance(token.GetTokenProviderType(), args) as TokenProvider;
+    }
+
+    public static Type? GetTokenProviderType(this Token token)
+    {
+        return AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(ass => ass.GetTypes()).FirstOrDefault(t => 
+                t?.Name.EndsWith(token.AuthMethod + TokenProvider.TOKEN_PROVIDER_POSTFIX) ?? false, null);
     }
 
     public static bool TryCreateTokenProvider(this Token token, out TokenProvider? provider, params object?[]? args)
