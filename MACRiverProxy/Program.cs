@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Serilog;
+using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Model;
 
 internal class Program
@@ -27,6 +28,7 @@ internal class Program
         builder.Services.AddSerilog(ser =>
         {
             ser.WriteTo.Console();
+            ser.WriteTo.File($"/logs/{DateTime.Now:u}");
         });
         builder.Services.AddSingleton<TokenStorage>();
         builder.Services.AddSingleton<MACAuthentication>();
@@ -164,7 +166,36 @@ internal class Program
 
         #region App setup
 
-        app.MapReverseProxy();
+        app.MapReverseProxy(options =>
+        {
+            options.Use(async (context, next) =>
+            {
+                await next();
+                
+                var errorFeature = context.GetForwarderErrorFeature(); 
+                if (errorFeature is not null && errorFeature.Exception is not null)
+                {
+                    switch (errorFeature.Error)
+                    {
+                        case ForwarderError.NoAvailableDestinations:
+                        case ForwarderError.RequestTimedOut:
+                        case ForwarderError.Request:
+                            context.Response.ThrowError(HttpStatusCode.BadGateway, "Target resource is not responding.", 
+                                "Resource you trying to access is not responding.", $"ERR_{errorFeature.Error.ToString().ToUpper()}"
+                            );
+                            break;
+                        default:
+                            context.Response.ThrowError(HttpStatusCode.BadGateway,
+                                "Failed to connect to target resource.",
+                                "While trying to connect to target resource, error happened.\nUse error code for more info.",
+                                $"ERR_{errorFeature.Error.ToString().ToUpper()}");
+                            break;
+                    }
+
+                    Log.Error(errorFeature.Exception, $"[{context.TraceIdentifier}] Failed to redirect request.");
+                } 
+            });
+        });
         app.UseSerilogRequestLogging();
 
         app.Start();
