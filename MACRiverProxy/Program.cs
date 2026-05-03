@@ -42,7 +42,8 @@ internal class Program
             {
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30); 
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                options.AccessDeniedPath = "/denied";
             });
 
         builder.Services.AddAuthorization((options, sp) =>
@@ -66,19 +67,17 @@ internal class Program
                         context.Fail();
                         return false;
                     }
-                    var tokenProviderType = token?.GetTokenProviderType();
-                    if (tokenProviderType is null)
+
+                    var tokenProvider = GetTokenProvider(token, sp);
+                    if (tokenProvider is null)
                     {
                         context.Fail();
                         return false;
                     }
-
-                    var tokenProvider = sp.GetService(tokenProviderType);
                     var configRouteId = "ReverseProxy:Routes:"+httpContextServ.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId;
                     var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
                     var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
-                    return (tokenStorageServ?.CheckToken(token)?? false) 
-                           && (((TokenProvider?)tokenProvider)?.VerifyToken(token!)?? false) 
+                    return VerifyToken(token, tokenStorageServ, tokenProvider) 
                            && token?.MACLevel >= macLevel
                            && (token?.IsCategory((byte)macCategory) ?? false);
                 });
@@ -101,6 +100,20 @@ internal class Program
 
         #region Login pages
 
+        app.MapGet("/denied",  (context =>
+        {
+            try
+            {
+                context.Request.Query.TryGetValue("ReturnURL", out var returnUrl);
+                context.Response.ThrowError(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
+                    $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", "ERR_ACCESS_DENIED");
+                return Task.CompletedTask;
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException(exception);
+            }
+        }));
         app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
         app.MapPost("/login", async (HttpContext context) =>
         {
@@ -128,8 +141,19 @@ internal class Program
                 }
             }
         });
-        app.MapGet("/logout", (context) => MACAuthentication.Singleton.SignOut(context, 
-            context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton));
+        app.MapGet("/logout", (context) =>
+        {
+            if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+            {
+                context.Response.Redirect(returnUrl);
+            }
+            else
+            {
+                context.Response.Redirect("/");
+            }
+            return MACAuthentication.Singleton.SignOut(context,
+                context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton);
+        });
         #if DEBUG
         app.MapGet("/test/error", async (context) =>
         {
@@ -176,6 +200,17 @@ internal class Program
 
         
     }
-    
+
+    public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
+    {
+        return (TokenProvider?) sp.GetService(token?.GetTokenProviderType());
+    }
+
+    public static bool VerifyToken(Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider)
+    {
+        return (tokenStorage?.CheckToken(token)?? false) 
+               && (tokenProvider?.VerifyToken(token!) ?? false);
+    }
+
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
 }
