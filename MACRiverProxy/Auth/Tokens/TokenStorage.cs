@@ -9,21 +9,31 @@ public class TokenStorage : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
 
-    public void RegisterToken(DateTime expires, Token token) => RegisterTokens(expires, [token]);
+    public void RegisterToken(DateTime expires, Token token)
+    {
+        _RegisterToken(expires, token);
+        this.SaveChanges();
+    }
+
+    private void _RegisterToken(DateTime expires, Token token)
+    {
+        TokenKey k = new TokenKey() {ExpireTime = expires};
+        token.TokenKey = k;
+        lock (ActiveTokens)
+        {
+            var ent = ActiveTokens.Add(token.TokenKey);
+            token.TokenKey = ent.Entity;
+        }
+    }
 
     public void RevokeToken(Token token) => RevokeTokens([token]);
     public void RevokeToken(TokenKey token) => RevokeTokens([token]);
 
     public void RegisterTokens(DateTime expires, params Token[] tokens)
     {
-        lock (ActiveTokens)
+        foreach (var token in tokens)
         {
-            ActiveTokens.AddRange(tokens.Select(x =>
-            {
-                TokenKey k = new TokenKey() {ExpireTime = expires};
-                x.TokenKey = k;
-                return k;
-            }));
+            _RegisterToken(expires, token);
         }
 
         this.SaveChanges();
@@ -55,7 +65,7 @@ public class TokenStorage : DbContext
         if (token is null) return false;
         lock (ActiveTokens)
         {
-            return ActiveTokens.Contains(token) && token!.ExpireTime <= DateTime.Now ;
+            return ActiveTokens.Contains(token) && token!.ExpireTime >= DateTime.Now ;
         }
     }
     /// <summary>

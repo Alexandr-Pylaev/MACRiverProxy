@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Serilog;
+using Yarp.ReverseProxy.Model;
 
 internal class Program
 {
@@ -52,14 +53,34 @@ internal class Program
             });
             options.AddPolicy("restricted", policyBuilder =>
             {
+                var tokenStorageServ = sp.GetService<TokenStorage>()!;
+                var configServ = sp.GetService<IConfiguration>()!;
+                var httpContextServ = sp.GetService<IHttpContextAccessor>()!;
                 policyBuilder.RequireAuthenticatedUser().RequireAssertion( context =>
                 {
-                    var tokenStorage = sp.GetService<TokenStorage>();
-                    var token = sp.GetService<IHttpContextAccessor>()!.HttpContext?.User
+                    var token = httpContextServ.HttpContext?.User
                         .FindFirst(Token.TOKEN_CLAIM_NAME)?
                         .ToToken();
-                    return (tokenStorage?
-                        .CheckToken(token)?? false) && (token?.CreateTokenProvider().VerifyToken(token)?? false) ;
+                    if (token is null)
+                    {
+                        context.Fail();
+                        return false;
+                    }
+                    var tokenProviderType = token?.GetTokenProviderType();
+                    if (tokenProviderType is null)
+                    {
+                        context.Fail();
+                        return false;
+                    }
+
+                    var tokenProvider = sp.GetService(tokenProviderType);
+                    var configRouteId = "ReverseProxy:Routes:"+httpContextServ.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId;
+                    var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
+                    var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
+                    return (tokenStorageServ?.CheckToken(token)?? false) 
+                           && (((TokenProvider?)tokenProvider)?.VerifyToken(token!)?? false) 
+                           && token?.MACLevel >= macLevel
+                           && (token?.IsCategory((byte)macCategory) ?? false);
                 });
             });
         });
