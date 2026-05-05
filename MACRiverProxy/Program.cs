@@ -30,6 +30,17 @@ internal class Program
             ser.WriteTo.Console();
             ser.WriteTo.File($"/logs/{DateTime.Now:u}");
         });
+        builder.WebHost.ConfigureKestrel(kestOpt =>
+        {
+            kestOpt.ListenAnyIP(80);
+            if (Environment.GetEnvironmentVariable("ENABLE_HTTPS") == "1")
+            {
+                kestOpt.ListenAnyIP(443, lisOpt =>
+                {
+                    lisOpt.UseHttps();
+                });
+            }
+        });
         builder.Services.AddSingleton<TokenStorage>();
         builder.Services.AddSingleton<MACAuthentication>();
         builder.Services.AddHttpContextAccessor();  
