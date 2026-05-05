@@ -51,6 +51,7 @@ public static class LocalAuthTokenProviderStatic
         col.TryAddSingleton(tokenStorage);
         col.TryAddSingleton(localAuthStorage);
         col.TryAddSingleton(authTokenProvider);
+        localAuthStorage.Database.EnsureCreated();
         localAuthStorage.Database.Migrate();
     }
 }

@@ -100,8 +100,10 @@ internal class Program
         #endregion
 
         app = builder.Build();
-        
-        app.Services.GetService<TokenStorage>()?.Database.Migrate();
+
+        var tokenStorage = app.Services.GetService<TokenStorage>();
+        tokenStorage?.Database.EnsureCreated();
+        tokenStorage?.Database.Migrate();
 
         #region App auth setup
         app.MapStaticAssets().ShortCircuit();
