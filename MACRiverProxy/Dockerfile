@@ -2,7 +2,7 @@
 USER $APP_UID
 WORKDIR /app
 EXPOSE 80
-EXPOSE 443
+EXPOSE 443 # Server will not use HTTPS when ENABLE_HTTPS in .env is 0
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
