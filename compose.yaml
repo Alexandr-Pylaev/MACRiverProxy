@@ -15,8 +15,6 @@
       - "RiverProxyDBs:/app/db/"
       - "./pages/:/app/Pages/:ro"
       - "./certs/:/certs/:ro"
-    environment:
-      - "Kestrel__Certificates__Default__Path=/certs/cert.pfx"
     restart: unless-stopped
     
 volumes:
