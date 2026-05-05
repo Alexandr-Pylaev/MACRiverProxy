@@ -28,7 +28,7 @@ internal class Program
         builder.Services.AddSerilog(ser =>
         {
             ser.WriteTo.Console();
-            ser.WriteTo.File($"/logs/{DateTime.Now:u}");
+            ser.WriteTo.File($"./logs/{DateTime.Now:u}.log");
         });
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
