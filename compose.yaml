@@ -15,6 +15,7 @@
       - "RiverProxyDBs:/app/db/"
       - "./pages/:/app/Pages/:ro"
       - "./certs/:/certs/:ro"
+      - "./logs/:/app/logs/"
     restart: unless-stopped
     
 volumes:
