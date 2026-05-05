@@ -8,10 +8,9 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MACRiverProxy/MACRiverProxy.csproj", "MACRiverProxy/"]
-RUN dotnet restore "MACRiverProxy/MACRiverProxy.csproj"
+COPY ["MACRiverProxy.csproj", "."]
+RUN dotnet restore "MACRiverProxy.csproj"
 COPY . .
-WORKDIR "/src/MACRiverProxy"
 RUN dotnet build "./MACRiverProxy.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
