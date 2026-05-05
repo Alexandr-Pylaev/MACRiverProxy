@@ -90,9 +90,25 @@ internal class Program
                     var configRouteId = "ReverseProxy:Routes:"+httpContextServ.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId;
                     var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
                     var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
-                    return VerifyToken(token, tokenStorageServ, tokenProvider) 
-                           && token?.MACLevel >= macLevel
-                           && (token?.IsCategory((byte)macCategory) ?? false);
+                    if (!VerifyToken(token, tokenStorageServ, tokenProvider))
+                    {
+                        Log.Information($"Token {token.Id} failed to verify.");
+                        return false;
+                    }
+
+                    if (token?.MACLevel < macLevel)
+                    {
+                        Log.Information($"Token {token.Id} failed MAC level check ({token?.MACLevel} < {macLevel}).");
+                        return false;
+                    }
+
+                    if (!(token?.IsCategory((byte)macCategory) ?? true))
+                    {
+                        Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
+                        return false;
+                    }
+
+                    return true;
                 });
             });
         });
