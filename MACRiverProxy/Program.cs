@@ -37,7 +37,7 @@ internal class Program
             {
                 kestOpt.ListenAnyIP(443, lisOpt =>
                 {
-                    lisOpt.UseHttps();
+                    lisOpt.UseHttps("/certs/cert.pfx");
                 });
             }
         });
