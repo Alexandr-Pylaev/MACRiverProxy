@@ -12,8 +12,7 @@
       - "443:443" # Works only with ENABLE_HTTPS in .env
     volumes: 
       - "./appsettings.json:/app/appsettings.json"
-      - "LocalAuthDB:/app/local-auth.db"
-      - "TokenStorageDB:/app/tokenstorage.db"
+      - "RiverProxyDBs:/app/db/"
       - "./pages/:/app/Pages/:ro"
       - "./certs/:/certs/:ro"
     environment:
@@ -21,6 +20,5 @@
     restart: unless-stopped
     
 volumes:
-  LocalAuthDB:
+  RiverProxyDBs:
     
-  TokenStorageDB:
