@@ -24,6 +24,7 @@ public static class MAC
 
     public static bool IsCategory(this IMAC mac, byte number)
     {
+        if (number == 0) return true;
         if (number > 64) throw new ArgumentOutOfRangeException(nameof(number), "Maximum category number is 64.");
         return (mac.MACCategory & (1ul << number)) != 0;
     }
