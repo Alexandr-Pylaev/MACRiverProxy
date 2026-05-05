@@ -21,6 +21,157 @@ internal class Program
     private static WebApplication app;
     public static void Main(string[] args)
     {
+        if (args.Length > 0)
+        {
+            string command = args[0];
+            switch (command)
+            {
+                case "user":
+                    if (args.Length >= 3)
+                    {
+                        string userCommand = args[1];
+                        string username = args[2];
+                        var storage = new LocalAuthStorage();
+                        var user = storage.FindUser(username).Result;
+                        switch (userCommand)
+                        {
+                            case "set":
+                            case "delete":
+                            {
+                                if (user is null)
+                                {
+                                    Console.WriteLine("User not found.");
+                                    return;
+                                }
+                                break;
+                            }
+                        }
+                        switch (userCommand)
+                        {
+                            case "add":
+                                if (args.Length == 4)
+                                {
+                                    string pass = args[3];
+                                    if (pass.Length < 8)
+                                    {
+                                        Console.WriteLine("Password is too short.");
+                                        return;
+                                    }
+                                    storage.RegisterUser(username, pass).Wait();
+                                    Console.WriteLine($"User {username} was added.");
+                                }
+                                else if (args.Length > 4)
+                                {
+                                    Console.WriteLine("Too many arguments. Use help for more info.");
+                                    return;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Not enough arguments. Use help for more info.");
+                                    return;
+                                }
+                                break;
+                            case "set": 
+                                if (args.Length > 4)
+                                {
+                                    string setType = args[3];
+                                    switch (setType)
+                                    {
+                                        case "mac":
+                                            if (args.Length > 6)
+                                            {
+                                                Console.WriteLine("Too many arguments. Use help for more info.");
+                                                return;
+                                            }
+                                            else if (args.Length >= 5)
+                                            {
+                                                string levelRaw = args[4];
+                                                string catRaw = $"{user!.MACCategory}";
+                                                if (args.Length == 6)
+                                                {
+                                                    catRaw = args[5];
+                                                }
+                                                if (!byte.TryParse(levelRaw, out var level) || !ulong.TryParse(catRaw, out var category))
+                                                {
+                                                    Console.WriteLine("Invalid arguments.");
+                                                    return;
+                                                }
+                                                user!.MACLevel = level;
+                                                user!.MACCategory = category;
+                                                storage.SaveChanges();
+                                                Console.WriteLine($"MAC for {username} was changed. \n" +
+                                                                  $"Be aware, that updated MAC will work only after proxy restart and user re-login.");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Not enough arguments. Use help for more info.");
+                                                return;
+                                            }
+                                            break;
+                                        case "pass":
+                                                if (args.Length == 5)
+                                                {
+                                                    string pass = args[4];
+                                                    if (pass.Length < 8)
+                                                    {
+                                                        Console.WriteLine("Password is too short.");
+                                                        return;
+                                                    }
+                                                    storage.ChangePassword(username, pass).Wait();
+                                                    storage.SaveChanges();
+                                                    Console.WriteLine($"Password for {username} was changed.");
+                                                }
+                                                else if (args.Length > 5)
+                                                {
+                                                    Console.WriteLine("Too many arguments. Use help for more info.");
+                                                    return;
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine("Not enough arguments. Use help for more info.");
+                                                    return;
+                                                } 
+                                                break;
+                                        default:
+                                            Console.WriteLine("Unknown set command.");
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Not enough arguments. Use help for more info.");
+                                    return;
+                                }
+                                break;
+                            case "delete":
+                                storage.Users.Remove(user!);
+                                storage.SaveChanges();
+                                Console.WriteLine($"User {user!.Login} was removed.");
+                                break;
+                            default:
+                                Console.WriteLine("Unknown user command.");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Not enough arguments. Use help for more info.");
+                        break;
+                    }
+                    break;
+                case "help": 
+                    Console.WriteLine("user add [username] [pass] - add user");
+                    Console.WriteLine("user set [username] mac [level] [?category] - set user level (and category)");
+                    Console.WriteLine("user set [username] pass [pass] - set user password");
+                    Console.WriteLine("user delete [username] - deletes user");
+                    break;
+                default:
+                    Console.WriteLine("Unknown command.");
+                    break;
+            }
+            return;
+        }
+        
         var builder = WebApplication.CreateBuilder(args);
 
         #region App builder setup   
