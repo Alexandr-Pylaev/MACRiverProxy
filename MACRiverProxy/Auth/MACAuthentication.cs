@@ -20,7 +20,7 @@ public class MACAuthentication
             return false;
         }
         tokenStorage.RegisterToken(expires, token);
-        await context.Request.HttpContext.SignInAsync(
+        await context.SignInAsync(
             new ClaimsPrincipal(
                 new ClaimsIdentity([token.AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme)));
         return true;
