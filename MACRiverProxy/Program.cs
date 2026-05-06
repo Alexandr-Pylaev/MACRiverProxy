@@ -192,7 +192,7 @@ internal class Program
                 });
             }
         });
-        builder.Services.AddSingleton<TokenStorage>();
+        builder.Services.AddDbContext<TokenStorage>();
         builder.Services.AddSingleton<MACAuthentication>();
         builder.Services.AddHttpContextAccessor();  
         builder.Services.AddLocalAuthTokenProvider();
@@ -268,9 +268,7 @@ internal class Program
 
         app = builder.Build();
 
-        var tokenStorage = app.Services.GetService<TokenStorage>();
-        tokenStorage?.Database.Migrate();
-        tokenStorage?.TokenStorageCleanup();
+        app.UseLocalAuthTokenProvider();
 
         #region App auth setup
         app.MapStaticAssets().ShortCircuit();
