@@ -22,6 +22,10 @@ internal class Program
     private static WebApplication app;
     public static void Main(string[] args)
     {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh:mm:ss}.log")
+            .CreateLogger();
         if (args.Length > 0)
         {
             string command = args[0];
@@ -176,14 +180,10 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
 
         #region App builder setup  
+        builder.Services.AddSerilog();
         builder.Services.AddDataProtection()
             .PersistKeysToDbContext<PersistentKeysDb>();
         builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));;
-        builder.Services.AddSerilog(ser =>
-        {
-            ser.WriteTo.Console();
-            ser.WriteTo.File($"./logs/{DateTime.Now:u}.log");
-        });
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
             kestOpt.ListenAnyIP(80);
