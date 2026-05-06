@@ -62,7 +62,8 @@ public static class TokenProviderStatic
     }
     public static void UseTokenStorage(this WebApplication app)
     {
-        var tokenStorage = app.Services.GetService<TokenStorage>();
+        using var scope = app.Services.CreateScope();
+        var tokenStorage = scope.ServiceProvider.GetService<TokenStorage>();
         tokenStorage?.Database.Migrate();
         tokenStorage?.TokenStorageCleanup();
     }

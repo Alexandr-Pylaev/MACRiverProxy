@@ -52,6 +52,7 @@ public static class LocalAuthTokenProviderStatic
     public static void UseLocalAuthTokenProvider(this WebApplication app)
     {
         app.UseTokenStorage();
-        app.Services.GetService<LocalAuthStorage>()?.Database.Migrate();
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetService<LocalAuthStorage>()?.Database.Migrate();
     }
 }
