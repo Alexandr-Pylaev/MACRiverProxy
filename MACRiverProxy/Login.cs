@@ -18,14 +18,7 @@ public static class Login
                 context.RequestServices.GetService<TokenStorage>(),
                 Program.GetTokenProvider(token, context.RequestServices)))
         {
-            if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
-            {
-                context.Response.Redirect(returnUrl);
-            }
-            else
-            {
-                context.Response.Redirect("/");
-            }
+            context.RedirectToUrl();
         }
         bool isDone = false;
         try
