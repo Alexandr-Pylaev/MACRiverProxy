@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Serilog;
@@ -174,7 +175,9 @@ internal class Program
         
         var builder = WebApplication.CreateBuilder(args);
 
-        #region App builder setup   
+        #region App builder setup  
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<PersistentKeysDb>();
         builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));;
         builder.Services.AddSerilog(ser =>
         {
