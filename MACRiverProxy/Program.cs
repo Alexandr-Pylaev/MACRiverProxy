@@ -334,12 +334,6 @@ internal class Program
             return MACAuthentication.Singleton.SignOut(context,
                 context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton);
         });
-        #if DEBUG
-        app.MapGet("/test/error", async (context) =>
-        {
-            context.Response.ThrowError(HttpStatusCode.InternalServerError);
-        });
-        #endif
         #endregion
 
         #region App setup
