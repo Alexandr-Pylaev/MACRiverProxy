@@ -17,6 +17,20 @@ public class LocalAuthStorage : DbContext
         return user;
     }
 
+    public async Task<bool> DeleteUser(string login)
+    {
+        var user = await FindUser(login);
+        if (user is null) return false;
+        return await DeleteUser(user);
+    }
+    
+    public async Task<bool> DeleteUser(LocalAuthUser user)
+    {
+        var result = Users.Remove(user).State == EntityState.Deleted;
+        await SaveChangesAsync();
+        return result;
+    }
+
     public async Task<LocalAuthUser?> FindUser(string login)
     {
         return await Users.FindAsync(login);
