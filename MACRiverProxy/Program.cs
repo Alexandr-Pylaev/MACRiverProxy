@@ -354,28 +354,19 @@ internal class Program
 
         void IsHttpsEnabled(WebApplication webApplication)
         {
-            bool isHttpsEnabled = false;
-
             foreach (var url in webApplication.Urls)
             {
                 if (url.ToLower().StartsWith("https://"))
                 {
-                    isHttpsEnabled = true;
-                    break;
+                    return;
                 }
             }
-
-            if (!isHttpsEnabled)
-            {
-                Log.Error("=========================================");
-                Log.Error("HTTPS is not enabled on this proxy.");
-                Log.Error("This means, that all proxy traffic is transferred in plain-text."); 
-                Log.Error("Please enable HTTPS for traffic encryption.");
-                Log.Error("=========================================");
-            }
+            Log.Error("=========================================");
+            Log.Error("HTTPS is not enabled on this proxy.");
+            Log.Error("This means, that all proxy traffic is transferred in plain-text."); 
+            Log.Error("Please enable HTTPS for traffic encryption.");
+            Log.Error("=========================================");
         }
-
-        
     }
 
     public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
