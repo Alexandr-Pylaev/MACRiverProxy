@@ -8,21 +8,20 @@ namespace MACRiverProxy;
 public static class ErrorPage
 {
     const string ERR_GENERIC = "ERR_GENERIC";
-    public static void ThrowError(this HttpResponse response, HttpStatusCode code = HttpStatusCode.InternalServerError, 
+    public static void SendToErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError, 
         string errorHeader = "Some error happened", string errorMessage = "Proxy thrown an error.\n" +
                                                                            "No additional information provided.\n\n" +
                                                                            "Contact administrator for additional help.",
         string errorCode = ERR_GENERIC)
     {
+        context.Response.StatusCode = ((int)HttpStatusCode.InternalServerError);
         if (errorCode == ERR_GENERIC) Log.Error($"{ERR_GENERIC} was used. This error should be used only in development.");
-        bool isDone = false;
         try
         {
             Log.Information($"Throwing error to client: {errorCode}");
-            response.StatusCode = (int)code;
-            response.WriteAsync(string.Format(File.ReadAllText("./Pages/ErrorPage.html"), errorHeader, errorMessage.Replace("\n", "<br/>"), errorCode));
-
-            isDone = true;
+            context.Response.StatusCode = (int)code;
+            context.Response.WriteAsync(string.Format(File.ReadAllText("./Pages/ErrorPage.html"), errorHeader,
+                errorMessage.Replace("\n", "<br/>"), errorCode));
         }
         catch (FileNotFoundException e)
         {
@@ -34,13 +33,6 @@ public static class ErrorPage
         {
             Log.Error("Unexpected error when sending a error.");
             Log.Error(e.ToString());
-        }
-        finally
-        {
-            if (!isDone)
-            {
-                response.StatusCode = ((int)HttpStatusCode.InternalServerError);
-            }
         }
     }
 }
