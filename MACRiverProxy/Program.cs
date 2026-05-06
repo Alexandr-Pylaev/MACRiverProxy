@@ -144,9 +144,9 @@ internal class Program
                                 }
                                 break;
                             case "delete":
-                                storage.Users.Remove(user!);
-                                storage.SaveChanges();
-                                Console.WriteLine($"User {user!.Login} was removed.");
+                                Console.WriteLine(storage.DeleteUser(user!).Result
+                                    ? $"User {user!.Login} was removed."
+                                    : $"Failed to remove user {user!.Login}.");
                                 break;
                             default:
                                 Console.WriteLine("Unknown user command.");
