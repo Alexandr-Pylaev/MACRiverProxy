@@ -6,6 +6,18 @@ namespace MACRiverProxy;
 
 public static class ReverseProxyStatic
 {
+    public static void RedirectToUrl(this HttpContext context)
+    {
+        if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+        {
+            context.Response.Redirect(returnUrl);
+        }
+        else
+        {
+            context.Response.Redirect("/");
+        }
+    }
+    
     public static IReverseProxyApplicationBuilder UseForwaredErrorDisplayMiddleware(this IReverseProxyApplicationBuilder proxyOpt)
     {
         proxyOpt.Use(async (context, next) =>

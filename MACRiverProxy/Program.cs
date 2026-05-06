@@ -271,11 +271,9 @@ internal class Program
 
         app = builder.Build();
 
-        app.UseLocalAuthTokenProvider();
-
         #region App auth setup
         app.MapStaticAssets().ShortCircuit();
-
+        app.UseLocalAuthTokenProvider();
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -313,27 +311,13 @@ internal class Program
             {
                 if (isSuccessful)
                 {
-                    if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
-                    {
-                        context.Response.Redirect(returnUrl);
-                    }
-                    else
-                    {
-                        context.Response.Redirect("/");
-                    }
+                    context.RedirectToUrl();
                 }
             }
         });
         app.MapGet("/logout", (context) =>
         {
-            if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
-            {
-                context.Response.Redirect(returnUrl);
-            }
-            else
-            {
-                context.Response.Redirect("/");
-            }
+            context.RedirectToUrl();
             return MACAuthentication.Singleton.SignOut(context,
                 context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton);
         });
