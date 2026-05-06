@@ -239,45 +239,38 @@ internal class Program
 
         #region Login pages
 
-        app.MapGet("/denied",  (context =>
+        app.MapGet("/denied",  (async context =>
         {
-            try
+            var returnUrl = context.GetRedirectUrl();
+            if (returnUrl == "/")
             {
-                context.Request.Query.TryGetValue("ReturnURL", out var returnUrl);
-                context.SendErrorPage(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
-                    $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", "ERR_ACCESS_DENIED");
-                return Task.CompletedTask;
+                context.Response.Redirect(returnUrl);
+                return;
             }
-            catch (Exception exception)
-            {
-                return Task.FromException(exception);
-            }
+            context.SendErrorPage(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
+                                                                              $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", "ERR_ACCESS_DENIED");
         }));
         app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
         app.MapPost("/login", async (HttpContext context) =>
         {
-            bool isSuccessful = false;
-            try
+            if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
+                || !context.Request.Form.TryGetValue("loginInput", out var login)
+                || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login))
             {
-                if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
-                    || !context.Request.Form.TryGetValue("loginInput", out var login) 
-                    || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login)) return;
-                isSuccessful = await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
-                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), login,pass);
+                context.Response.Redirect("/");
+                return;
             }
-            finally
+            if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
+                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), login,pass))
             {
-                if (isSuccessful)
-                {
-                    context.RedirectToUrl();
-                }
+                context.RedirectToUrl();
             }
         });
-        app.MapGet("/logout", (context) =>
+        app.MapGet("/logout", async (context) =>
         {
-            context.RedirectToUrl();
-            return MACAuthentication.Singleton.SignOut(context,
+            await MACAuthentication.Singleton.SignOut(context,
                 context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton);
+            context.RedirectToUrl();
         });
         #endregion
 
