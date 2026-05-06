@@ -285,7 +285,7 @@ internal class Program
             try
             {
                 context.Request.Query.TryGetValue("ReturnURL", out var returnUrl);
-                context.Response.ThrowError(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
+                context.SendToErrorPage(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
                     $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", "ERR_ACCESS_DENIED");
                 return Task.CompletedTask;
             }
