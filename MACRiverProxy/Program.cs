@@ -219,51 +219,9 @@ internal class Program
             {
                 policyBuilder.Requirements.Add(new AssertionRequirement(_ => true));
             });
-            options.AddPolicy("restricted", policyBuilder =>
+            options.AddPolicy(Restricted, policyBuilder =>
             {
-                var tokenStorageServ = sp.GetService<TokenStorage>()!;
-                var configServ = sp.GetService<IConfiguration>()!;
-                var httpContextServ = sp.GetService<IHttpContextAccessor>()!;
-                policyBuilder.RequireAuthenticatedUser().RequireAssertion( context =>
-                {
-                    var token = httpContextServ.HttpContext?.User
-                        .FindFirst(Token.TOKEN_CLAIM_NAME)?
-                        .ToToken();
-                    if (token is null)
-                    {
-                        context.Fail();
-                        return false;
-                    }
-
-                    var tokenProvider = GetTokenProvider(token, sp);
-                    if (tokenProvider is null)
-                    {
-                        context.Fail();
-                        return false;
-                    }
-                    var configRouteId = "ReverseProxy:Routes:"+httpContextServ.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId;
-                    var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
-                    var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
-                    if (!VerifyToken(token, tokenStorageServ, tokenProvider))
-                    {
-                        Log.Information($"Token {token.Id} failed to verify.");
-                        return false;
-                    }
-
-                    if (token?.MACLevel < macLevel)
-                    {
-                        Log.Information($"Token {token.Id} failed MAC level check ({token?.MACLevel} < {macLevel}).");
-                        return false;
-                    }
-
-                    if (!(token?.IsCategory((byte)macCategory) ?? true))
-                    {
-                        Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
-                        return false;
-                    }
-
-                    return true;
-                });
+                policyBuilder.RequireAssertion(_ => AuthenticateTokenForContext(sp.GetService<IHttpContextAccessor>()?.HttpContext!));
             });
         });
 
@@ -354,6 +312,55 @@ internal class Program
             Log.Error("Please enable HTTPS for traffic encryption.");
             Log.Error("=========================================");
         }
+    }
+
+    public static bool AuthenticateTokenForRoute(IServiceProvider sp, Token? token, string routeId)
+    {
+        var tokenStorageServ = sp.GetService<TokenStorage>()!;
+        var configServ = sp.GetService<IConfiguration>()!;
+        if (token is null)
+        {
+            return false;
+        }
+        var tokenProvider = GetTokenProvider(token, sp);
+        if (tokenProvider is null)
+        {
+            return false;
+        }
+        var configRouteId = "ReverseProxy:Routes:"+routeId;
+        if (configServ.GetValue<string?>($"{configRouteId}:AuthorizationPolicy") != Restricted) return true;
+        var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
+        var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
+        if (!VerifyToken(token, tokenStorageServ, tokenProvider))
+        {
+            Log.Information($"Token {token.Id} failed to verify.");
+            return false;
+        }
+
+        if (token?.MACLevel < macLevel)
+        {
+            Log.Information($"Token {token.Id} failed MAC level check ({token?.MACLevel} < {macLevel}).");
+            return false;
+        }
+
+        if (!(token?.IsCategory((byte)macCategory) ?? true))
+        {
+            Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
+            return false;
+        }
+
+        return true;
+    }
+
+    private const string Restricted = "restricted";
+
+    private static bool AuthenticateTokenForContext(HttpContext context)
+    {
+        var token = context.User
+            .FindFirst(Token.TOKEN_CLAIM_NAME)?
+            .ToToken();
+        return AuthenticateTokenForRoute(context.RequestServices,token,
+            context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
     }
 
     public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
