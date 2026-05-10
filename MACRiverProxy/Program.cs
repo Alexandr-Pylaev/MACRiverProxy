@@ -252,7 +252,17 @@ internal class Program
 
         #region Login pages
         
-        app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
+        app.MapGet("/login", async (context) =>
+        {
+            var token = context.GetUserToken();
+            if (token is not null && VerifyToken(token,
+                    context.RequestServices.GetService<TokenStorage>(),
+                    GetTokenProvider(token, context.RequestServices)))
+            {
+                context.RedirectToUrl();
+            }
+            await context.Response.SendLoginAsync();
+        });
         app.MapPost("/login", async (HttpContext context) =>
         {
             if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
