@@ -26,7 +26,7 @@ internal class Program
     {
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
-            .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh:mm:ss}.log")
+            .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
             .CreateLogger();
         if (args.Length > 0)
         {
