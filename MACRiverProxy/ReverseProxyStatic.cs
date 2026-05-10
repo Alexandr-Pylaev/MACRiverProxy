@@ -44,7 +44,7 @@ public static class ReverseProxyStatic
                     break;
             }
 
-            context.SendErrorPage(HttpStatusCode.BadGateway,
+            context.SendErrorPageAsync(HttpStatusCode.BadGateway,
                 header,
                 msg,
                 $"ERR_{errorFeature.Error.ToString().ToUpper()}");
