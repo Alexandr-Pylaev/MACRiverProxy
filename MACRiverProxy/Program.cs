@@ -210,7 +210,7 @@ internal class Program
             {
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                options.ExpireTimeSpan = TokenLifeSpan;
                 options.Events = new CookieAuthenticationEvents()
                 {
                     OnRedirectToAccessDenied = async context =>
