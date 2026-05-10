@@ -345,7 +345,7 @@ internal class Program
             return false;
         }
 
-        if (!token.HaveCategory((byte)macCategory))
+        if (!token.HaveCategories(macCategory))
         {
             Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
             return false;
