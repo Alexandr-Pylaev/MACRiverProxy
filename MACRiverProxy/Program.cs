@@ -179,12 +179,12 @@ internal class Program
         }
         
         var builder = WebApplication.CreateBuilder(args);
-        TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>("MACRiver:TokenLifeSpanMinutes") ?? 30);
-        #region App builder setup  
+
+        #region Builder app setup
+
         builder.Services.AddSerilog();
         builder.Services.AddDataProtection()
             .PersistKeysToDbContext<PersistentKeysDb>();
-        builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));;
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
             kestOpt.ListenAnyIP(80);
@@ -196,14 +196,20 @@ internal class Program
                 });
             }
         });
+
+        #endregion
+        #region Builder mac proxy setup
+        
+        TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>("MACRiver:TokenLifeSpanMinutes") ?? 30);
+        builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddDbContext<TokenStorage>();
         builder.Services.AddSingleton<MACAuthentication>();
-        builder.Services.AddHttpContextAccessor();  
         builder.Services.AddLocalAuthTokenProvider();
         
         #endregion
         
-        #region App builder auth setup
+        #region Builder auth setup
 
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -213,16 +219,7 @@ internal class Program
                 options.ExpireTimeSpan = TokenLifeSpan;
                 options.Events = new CookieAuthenticationEvents()
                 {
-                    OnRedirectToAccessDenied = async context =>
-                    {
-                        // Prevent redirection when access is denied
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                        var returnUrl = context.HttpContext.GetRedirectUrl();
-                        await context.HttpContext.SendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.", 
-                            "Proxy failed to authorize you and forbidden access to this resource. \n" +
-                            $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", 
-                            "ERR_ACCESS_DENIED");
-                    }
+                    OnRedirectToAccessDenied = _FakeRedirectAccessDenied
                 };
             });
 
@@ -243,6 +240,7 @@ internal class Program
         app = builder.Build();
 
         #region App auth setup
+        
         app.MapStaticAssets().ShortCircuit();
         app.UseLocalAuthTokenProvider();
         app.UseAuthentication();
@@ -252,44 +250,10 @@ internal class Program
 
         #region Login pages
         
-        app.MapGet("/login", async (context) =>
-        {
-            var token = context.GetUserToken();
-            if (token is not null && VerifyToken(token,
-                    context.RequestServices.GetService<TokenStorage>(),
-                    GetTokenProvider(token, context.RequestServices)))
-            {
-                context.RedirectToUrl();
-            }
-            await context.Response.SendLoginAsync();
-        });
-        app.MapPost("/login", async (HttpContext context) =>
-        {
-            if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
-                || !context.Request.Form.TryGetValue("loginInput", out var login)
-                || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login))
-            {
-                context.Response.Redirect("/");
-                return;
-            }
-            if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
-                    DateTime.Now.Add(TokenLifeSpan), login,pass))
-            {
-                context.RedirectToUrl();
-                return;
-            }
-            context.Response.Redirect("/login?error=Failed%20to%20verify%20info%20you%20provided.");
-        });
-        app.MapGet("/logout", async (context) =>
-        {
-            var tokenAuthMethod = context.GetUserToken()?.AuthMethod;
-            if (string.IsNullOrEmpty(tokenAuthMethod)) return;
-            if (await MACAuthentication.Singleton.SignOut(context))
-            {
-                Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
-            }
-            context.RedirectToUrl();
-        });
+        app.MapGet("/login", _LoginPage);
+        app.MapPost("/login", _LoginPost);
+        app.MapGet("/logout", _Logout);
+        
         #endregion
 
         #region App setup
@@ -301,28 +265,83 @@ internal class Program
         app.UseSerilogRequestLogging();
 
         app.Start();
-
-        IsHttpsEnabled(app);
-
-        #endregion
-
-        while (!app.Lifetime.ApplicationStopping.IsCancellationRequested) { }
-
-        void IsHttpsEnabled(WebApplication webApplication)
+        
+        if (IsHttpsEnabled())
         {
-            foreach (var url in webApplication.Urls)
-            {
-                if (url.ToLower().StartsWith("https://"))
-                {
-                    return;
-                }
-            }
             Log.Error("=========================================");
             Log.Error("HTTPS is not enabled on this proxy.");
             Log.Error("This means, that all proxy traffic is transferred in plain-text."); 
             Log.Error("Please enable HTTPS for traffic encryption.");
             Log.Error("=========================================");
         }
+
+        #endregion
+
+        while (!app.Lifetime.ApplicationStopping.IsCancellationRequested) { }
+    }
+
+    private static async Task _FakeRedirectAccessDenied(RedirectContext<CookieAuthenticationOptions> redirContext)
+    {
+        // Prevent redirection when access is denied
+        redirContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+        var returnUrl = redirContext.HttpContext.GetRedirectUrl();
+        await redirContext.HttpContext.SendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.", 
+            "Proxy failed to authorize you and forbidden access to this resource. \n" +
+            $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", 
+            "ERR_ACCESS_DENIED");
+    }
+
+    private static async Task _LoginPage(HttpContext context)
+    {
+        var token = context.GetUserToken();
+        if (token is not null && VerifyToken(token,
+                context.RequestServices.GetService<TokenStorage>(),
+                GetTokenProvider(token, context.RequestServices)))
+        {
+            context.RedirectToUrl();
+        }
+        await context.Response.SendLoginAsync();
+    }
+
+    private static async Task _LoginPost(HttpContext context)
+    {
+        if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
+            || !context.Request.Form.TryGetValue("loginInput", out var login)
+            || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login))
+        {
+            context.Response.Redirect("/");
+            return;
+        }
+        if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
+                DateTime.Now.Add(TokenLifeSpan), login,pass))
+        {
+            context.RedirectToUrl();
+            return;
+        }
+        context.Response.Redirect("/login?error=Failed%20to%20verify%20info%20you%20provided.");
+    }
+
+    private static async Task _Logout(HttpContext context)
+    {
+        var tokenAuthMethod = context.GetUserToken()?.AuthMethod;
+        if (string.IsNullOrEmpty(tokenAuthMethod)) return;
+        if (await MACAuthentication.Singleton.SignOut(context))
+        {
+            Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
+        }
+        context.RedirectToUrl();
+    }
+
+    private static bool IsHttpsEnabled()
+    {
+        foreach (var url in app.Urls)
+        {
+            if (url.ToLower().StartsWith("https://"))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static bool AuthenticateTokenForRoute(IServiceProvider sp, Token? token, string routeId)
@@ -368,12 +387,9 @@ internal class Program
 
     private const string Restricted = "restricted";
 
-    private static bool AuthenticateTokenForContext(HttpContext context)
-    {
-        var token = context.GetUserToken();
-        return AuthenticateTokenForRoute(context.RequestServices,token,
+    private static bool AuthenticateTokenForContext(HttpContext context) =>
+        AuthenticateTokenForRoute(context.RequestServices,context.GetUserToken(),
             context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
-    }
 
     public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
     {
@@ -382,11 +398,9 @@ internal class Program
         return (TokenProvider?) sp.GetService(tokenProviderType);
     }
 
-    public static bool VerifyToken(Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider)
-    {
-        return (tokenStorage?.CheckToken(token)?? false) 
-               && (tokenProvider?.VerifyToken(token!) ?? false);
-    }
+    public static bool VerifyToken(Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider) =>
+        (tokenStorage?.CheckToken(token)?? false) 
+        && (tokenProvider?.VerifyToken(token!) ?? false);
 
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
 }
