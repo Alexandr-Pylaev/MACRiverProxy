@@ -260,7 +260,7 @@ internal class Program
 
         app.MapReverseProxy(options =>
         {
-            options.UseForwaredErrorDisplayMiddleware();
+            options.UseForwarderErrorDisplayMiddleware();
         });
         app.UseSerilogRequestLogging();
 
