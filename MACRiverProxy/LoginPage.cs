@@ -6,7 +6,7 @@ using Serilog;
 
 namespace MACRiverProxy;
 
-public static class Login
+public static class LoginPage
 {
     public static async Task SendLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
