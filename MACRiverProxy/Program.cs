@@ -20,6 +20,7 @@ using Yarp.ReverseProxy.Model;
 internal class Program
 {
     private static WebApplication app;
+    public static TimeSpan TokenLifeSpan;
     public static void Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
@@ -178,7 +179,7 @@ internal class Program
         }
         
         var builder = WebApplication.CreateBuilder(args);
-
+        TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>("MACRiver:TokenLifeSpanMinutes") ?? 30);
         #region App builder setup  
         builder.Services.AddSerilog();
         builder.Services.AddDataProtection()
@@ -260,16 +261,23 @@ internal class Program
                 context.Response.Redirect("/");
                 return;
             }
-            if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!,
-                    context.RequestServices.GetService<TokenStorage>()!, DateTime.Now.AddDays(1), login,pass))
+            if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
+                    DateTime.Now.Add(TokenLifeSpan), login,pass))
             {
                 context.RedirectToUrl();
+                return;
             }
+            context.Response.Redirect("/login?error=Failed%20to%20verify%20info%20you%20provided.");
         });
         app.MapGet("/logout", async (context) =>
         {
-            await MACAuthentication.Singleton.SignOut(context,
-                context.RequestServices.GetService<TokenStorage>()!, NullTokenProvider.Singleton);
+            var tokenAuthMethod = context.User
+                .FindFirst(Token.TOKEN_CLAIM_NAME)
+                .ToToken().AuthMethod;
+            if (await MACAuthentication.Singleton.SignOut(context))
+            {
+                Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
+            }
             context.RedirectToUrl();
         });
         #endregion
