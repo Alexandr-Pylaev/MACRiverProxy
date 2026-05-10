@@ -339,13 +339,13 @@ internal class Program
             return false;
         }
 
-        if (token?.MACLevel < macLevel)
+        if (!token.HaveLevel(macLevel))
         {
             Log.Information($"Token {token.Id} failed MAC level check ({token?.MACLevel} < {macLevel}).");
             return false;
         }
 
-        if (!(token?.IsCategory((byte)macCategory) ?? true))
+        if (!token.HaveCategory((byte)macCategory))
         {
             Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
             return false;
