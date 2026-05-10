@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MACRiverProxy.Auth.MAC;
 
 namespace MACRiverProxy.Auth.Tokens;
 
@@ -43,5 +44,20 @@ public static class TokenStatic
         return context.User
             .FindFirst(Token.TOKEN_CLAIM_NAME)?
             .ToToken();
+    }
+    public static Token ToToken(this Claim? claim)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(NullTokenProvider.Singleton.CreateToken()),
+                new JsonSerializerOptions()
+                {
+                    AllowOutOfOrderMetadataProperties = true
+                })!;
+        }
+        catch (JsonException _)
+        {
+            return NullTokenProvider.Singleton.CreateToken();
+        }
     }
 }

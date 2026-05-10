@@ -1,4 +1,4 @@
-﻿namespace MACRiverProxy.Auth;
+﻿namespace MACRiverProxy.Auth.MAC;
 
 public interface IMAC
 {
