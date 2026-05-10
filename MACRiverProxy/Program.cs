@@ -266,8 +266,8 @@ internal class Program
         app.UseSerilogRequestLogging();
 
         app.Start();
-        
-        if (IsHttpsEnabled())
+        IsHttpsEnabled = _IsHttpsEnabled();
+        if (IsHttpsEnabled)
         {
             Log.Error("=========================================");
             Log.Error("HTTPS is not enabled on this proxy.");
@@ -332,8 +332,8 @@ internal class Program
         }
         context.RedirectToUrl();
     }
-
-    private static bool IsHttpsEnabled()
+    public static bool IsHttpsEnabled { get; private set; }
+    private static bool _IsHttpsEnabled()
     {
         foreach (var url in app.Urls)
         {
