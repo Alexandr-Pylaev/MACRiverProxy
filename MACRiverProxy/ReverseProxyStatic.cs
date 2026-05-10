@@ -20,7 +20,7 @@ public static class ReverseProxyStatic
         context.Response.Redirect(context.GetRedirectUrl());
     }
     
-    public static IReverseProxyApplicationBuilder UseForwaredErrorDisplayMiddleware(this IReverseProxyApplicationBuilder proxyOpt)
+    public static IReverseProxyApplicationBuilder UseForwarderErrorDisplayMiddleware(this IReverseProxyApplicationBuilder proxyOpt)
     {
         proxyOpt.Use(async (context, next) =>
         {
