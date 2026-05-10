@@ -318,21 +318,19 @@ internal class Program
 
     public static bool AuthenticateTokenForRoute(IServiceProvider sp, Token? token, string routeId)
     {
+        if (token is null) return false;
+        
         var tokenStorageServ = sp.GetService<TokenStorage>()!;
         var configServ = sp.GetService<IConfiguration>()!;
-        if (token is null)
-        {
-            return false;
-        }
+        
         var tokenProvider = GetTokenProvider(token, sp);
-        if (tokenProvider is null)
-        {
-            return false;
-        }
-        var configRouteId = "ReverseProxy:Routes:"+routeId;
-        if (configServ.GetValue<string?>($"{configRouteId}:AuthorizationPolicy") != Restricted) return true;
-        var macLevel = configServ.GetValue<byte?>($"{configRouteId}:MACLevel") ?? byte.MaxValue;
-        var macCategory = configServ.GetValue<ulong?>($"{configRouteId}:MACCategory") ?? ulong.MaxValue;
+        if (tokenProvider is null) return false;
+        
+        if (_GetRouteConfigValue<string?>(configServ, routeId, "AuthorizationPolicy") != Restricted) return true;
+        
+        var macLevel = _GetRouteConfigValue<byte?>(configServ, routeId, "MACLevel") ?? byte.MaxValue;
+        var macCategory = _GetRouteConfigValue<ulong?>(configServ, routeId, "MACCategory") ?? ulong.MaxValue;
+        
         if (!VerifyToken(token, tokenStorageServ, tokenProvider))
         {
             Log.Information($"Token {token.Id} failed to verify.");
@@ -352,6 +350,11 @@ internal class Program
         }
 
         return true;
+    }
+
+    private static T? _GetRouteConfigValue<T>(IConfiguration configServ, string routeId, string key)
+    {
+        return configServ.GetValue<T?>($"ReverseProxy:Routes:{routeId}:{key}");
     }
 
     private const string Restricted = "restricted";
