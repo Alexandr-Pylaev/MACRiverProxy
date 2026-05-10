@@ -14,14 +14,11 @@ public static class ErrorPage
                                                                            "Contact administrator for additional help.",
         string errorCode = ERR_GENERIC)
     {
-        context.Response.StatusCode = ((int)HttpStatusCode.InternalServerError);
         if (errorCode == ERR_GENERIC) Log.Error($"{ERR_GENERIC} was used. This error should be used only in development.");
+        Log.Information($"Throwing error to client: {errorCode}");
         try
         {
-            Log.Information($"Throwing error to client: {errorCode}");
-            context.Response.StatusCode = (int)code;
-            await context.Response.WriteAsync(string.Format(await File.ReadAllTextAsync("./Pages/ErrorPage.html"), errorHeader,
-                errorMessage.Replace("\n", "<br/>"), errorCode));
+            await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage), code);
         }
         catch (FileNotFoundException e)
         {
@@ -34,6 +31,13 @@ public static class ErrorPage
             Log.Error("Unexpected error when sending a error.");
             Log.Error(e.ToString());
         }
+    }
+
+    private static async Task<string> GenerateErrorPage(string errorHeader, string errorMessage)
+    {
+        return string.Format(await File.ReadAllTextAsync("./Pages/ErrorPage.html"),
+            errorHeader,
+            errorMessage.Replace("\n", "<br/>"));
     }
 
     public static void SendErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError,
