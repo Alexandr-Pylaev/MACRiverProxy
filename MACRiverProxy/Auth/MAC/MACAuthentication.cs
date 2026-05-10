@@ -1,11 +1,9 @@
-﻿using System.Net;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Serilog;
 
-namespace MACRiverProxy.Auth;
+namespace MACRiverProxy.Auth.MAC;
 
 public class MACAuthentication
 {

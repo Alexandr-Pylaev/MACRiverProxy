@@ -5,6 +5,7 @@ using System.Text.Json;
 using MACRiverProxy;
 using MACRiverProxy.Auth;
 using MACRiverProxy.Auth.LocalAuth;
+using MACRiverProxy.Auth.MAC;
 using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
