@@ -351,6 +351,11 @@ internal class Program
             Console.WriteLine();
             try
             {
+                if (pass.Length < 8)
+                {
+                    Log.Error("Password is too short.");
+                    return;
+                }
                 localAuthStorage.ChangePassword(user, pass).Wait();
                 Log.Information($"Password changed for user {user.Login}");
             }
