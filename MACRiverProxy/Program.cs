@@ -358,7 +358,9 @@ internal class Program
 
     public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
     {
-        return (TokenProvider?) sp.GetService(token?.GetTokenProviderType());
+        var tokenProviderType = token?.GetTokenProviderType();
+        if (tokenProviderType is null) return null;
+        return (TokenProvider?) sp.GetService(tokenProviderType);
     }
 
     public static bool VerifyToken(Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider)
