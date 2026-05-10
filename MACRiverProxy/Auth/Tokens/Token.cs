@@ -35,3 +35,13 @@ public sealed class Token(string authMethod) : IMAC
 
     public const string TOKEN_CLAIM_NAME = "Token";
 }
+
+public static class TokenStatic
+{
+    public static Token? GetUserToken(this HttpContext context)
+    {
+        return context.User
+            .FindFirst(Token.TOKEN_CLAIM_NAME)?
+            .ToToken();
+    }
+}

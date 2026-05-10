@@ -11,9 +11,7 @@ public static class Login
     public static async Task RedirectToLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
         var context = response.HttpContext;
-        var token = context.User
-            .FindFirst(Token.TOKEN_CLAIM_NAME)?
-            .ToToken();
+        var token = context.GetUserToken();
         if (token is not null && Program.VerifyToken(token,
                 context.RequestServices.GetService<TokenStorage>(),
                 Program.GetTokenProvider(token, context.RequestServices)))

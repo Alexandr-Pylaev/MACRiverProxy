@@ -33,7 +33,8 @@ public class MACAuthentication
     public async Task<bool> SignOut(HttpContext context)
     {
         bool successful = true;
-        var token = context.User.FindFirst(Token.TOKEN_CLAIM_NAME).ToToken();
+        var token = context.GetUserToken();
+        if (token is null) return false;
         var provider = Program.GetTokenProvider(token, context.RequestServices);
         
         successful = provider is null;

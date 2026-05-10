@@ -272,9 +272,8 @@ internal class Program
         });
         app.MapGet("/logout", async (context) =>
         {
-            var tokenAuthMethod = context.User
-                .FindFirst(Token.TOKEN_CLAIM_NAME)
-                .ToToken().AuthMethod;
+            var tokenAuthMethod = context.GetUserToken()?.AuthMethod;
+            if (string.IsNullOrEmpty(tokenAuthMethod)) return;
             if (await MACAuthentication.Singleton.SignOut(context))
             {
                 Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
@@ -361,9 +360,7 @@ internal class Program
 
     private static bool AuthenticateTokenForContext(HttpContext context)
     {
-        var token = context.User
-            .FindFirst(Token.TOKEN_CLAIM_NAME)?
-            .ToToken();
+        var token = context.GetUserToken();
         return AuthenticateTokenForRoute(context.RequestServices,token,
             context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
     }
