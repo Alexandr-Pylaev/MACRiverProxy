@@ -5,12 +5,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MACRiverProxy.Auth.MAC;
 
-public class MACAuthentication
+public static class MACAuthenticationStatic
 {
-    private static Lazy<MACAuthentication> _singleton = new();
-    public static MACAuthentication Singleton => _singleton.Value;
-
-    public async Task<bool> SignIn(HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
+    public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
     {
         var token = provider.CreateToken(args);
         var tokenStorage = context.RequestServices.GetService<TokenStorage>();
@@ -28,12 +25,12 @@ public class MACAuthentication
                 new ClaimsIdentity([token.AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme)));
         return true;
     }
-    public async Task<bool> SignOut(HttpContext context)
+    public static async Task<bool> SignOut(this HttpContext context)
     {
         bool successful = true;
         var token = context.GetUserToken();
         if (token is null) return false;
-        var provider = Program.GetTokenProvider(token, context.RequestServices);
+        var provider = context.RequestServices.GetTokenProvider(token);
         
         successful = provider is null;
         

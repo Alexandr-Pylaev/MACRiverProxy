@@ -56,6 +56,13 @@ public static class TokenProviderStatic
         }
     }
     
+    public static TokenProvider? GetTokenProvider(this IServiceProvider sp, Token token)
+    {
+        var tokenProviderType = token?.GetTokenProviderType();
+        if (tokenProviderType is null) return null;
+        return (TokenProvider?) sp.GetService(tokenProviderType);
+    }
+    
     public static void AddTokenStorage(this IServiceCollection col)
     {
         col.TryAddScoped<TokenStorage>();
