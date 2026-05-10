@@ -1,4 +1,4 @@
-﻿namespace MACRiverProxy.Auth;
+﻿namespace MACRiverProxy.Auth.MAC;
 
 public interface IMAC
 {
@@ -22,11 +22,15 @@ public static class MAC
         }
     }
 
-    public static bool IsCategory(this IMAC mac, byte number)
+    public static bool HaveLevel(this IMAC mac, byte level) => mac.MACLevel >= level;
+
+    public static bool HaveCategories(this IMAC mac, ulong category) => (mac.MACCategory & category) != 0;
+
+    public static bool HaveCategory(this IMAC mac, byte number)
     {
         if (number == 0) return true;
         if (number > 64) throw new ArgumentOutOfRangeException(nameof(number), "Maximum category number is 64.");
-        return (mac.MACCategory & (1ul << number)) != 0;
+        return mac.HaveCategories((1ul << number));
     }
 
     public static void AddMACCategory(this IMAC mac,byte number) => mac.SetMACCategory(number, true);
