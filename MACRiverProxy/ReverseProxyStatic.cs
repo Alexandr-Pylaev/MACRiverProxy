@@ -24,6 +24,7 @@ public static class ReverseProxyStatic
     {
         proxyOpt.Use(async (context, next) =>
         {
+            // Awaiting when other middlewares finishes
             await next();
 
             var errorFeature = context.GetForwarderErrorFeature();
@@ -44,7 +45,7 @@ public static class ReverseProxyStatic
                     break;
             }
 
-            context.SendErrorPageAsync(HttpStatusCode.BadGateway,
+            await context.SendErrorPageAsync(HttpStatusCode.BadGateway,
                 header,
                 msg,
                 $"ERR_{errorFeature.Error.ToString().ToUpper()}");
