@@ -8,16 +8,8 @@ namespace MACRiverProxy;
 
 public static class Login
 {
-    public static async Task RedirectToLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
+    public static async Task SendLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
-        var context = response.HttpContext;
-        var token = context.GetUserToken();
-        if (token is not null && Program.VerifyToken(token,
-                context.RequestServices.GetService<TokenStorage>(),
-                Program.GetTokenProvider(token, context.RequestServices)))
-        {
-            context.RedirectToUrl();
-        }
         bool isDone = false;
         try
         {
@@ -29,13 +21,13 @@ public static class Login
         }
         catch (FileNotFoundException e)
         {
-            Log.Error($"Error page was not found. {e.Message}");
+            Log.Error($"Login page was not found. {e.Message}");
             if (Program.IsAppDevelopment()) Log.Error(e.ToString());
             throw;
         }
         catch (Exception e)
         {
-            Log.Error("Unexpected error when sending a error.");
+            Log.Error("Unexpected error when sending a login page.");
             Log.Error(e.ToString());
         }
         finally
@@ -47,6 +39,6 @@ public static class Login
         }
     }
 
-    public static void RedirectToLogin(this HttpResponse response,
-        HttpStatusCode code = HttpStatusCode.TemporaryRedirect) => RedirectToLoginAsync(response, code).Wait();
+    public static void SendLogin(this HttpResponse response,
+        HttpStatusCode code = HttpStatusCode.TemporaryRedirect) => SendLoginAsync(response, code).Wait();
 }
