@@ -8,7 +8,7 @@ namespace MACRiverProxy;
 public static class ErrorPage
 {
     const string ERR_GENERIC = "ERR_GENERIC";
-    public static void SendErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError, 
+    public static async Task SendErrorPageAsync(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError, 
         string errorHeader = "Some error happened", string errorMessage = "Proxy thrown an error.\n" +
                                                                            "No additional information provided.\n\n" +
                                                                            "Contact administrator for additional help.",
@@ -20,7 +20,7 @@ public static class ErrorPage
         {
             Log.Information($"Throwing error to client: {errorCode}");
             context.Response.StatusCode = (int)code;
-            context.Response.WriteAsync(string.Format(File.ReadAllText("./Pages/ErrorPage.html"), errorHeader,
+            await context.Response.WriteAsync(string.Format(await File.ReadAllTextAsync("./Pages/ErrorPage.html"), errorHeader,
                 errorMessage.Replace("\n", "<br/>"), errorCode));
         }
         catch (FileNotFoundException e)
@@ -35,4 +35,11 @@ public static class ErrorPage
             Log.Error(e.ToString());
         }
     }
+
+    public static void SendErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError,
+        string errorHeader = "Some error happened", string errorMessage = "Proxy thrown an error.\n" +
+                                                                          "No additional information provided.\n\n" +
+                                                                          "Contact administrator for additional help.",
+        string errorCode = ERR_GENERIC) =>
+        SendErrorPageAsync(context, code, errorHeader, errorMessage, errorCode).Wait();
 }

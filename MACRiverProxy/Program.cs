@@ -211,7 +211,19 @@ internal class Program
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-                options.AccessDeniedPath = "/denied";
+                options.Events = new CookieAuthenticationEvents()
+                {
+                    OnRedirectToAccessDenied = async context =>
+                    {
+                        // Prevent redirection when access is denied
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        var returnUrl = context.HttpContext.GetRedirectUrl();
+                        await context.HttpContext.SendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.", 
+                            "Proxy failed to authorize you and forbidden access to this resource. \n" +
+                            $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", 
+                            "ERR_ACCESS_DENIED");
+                    }
+                };
             });
 
         builder.Services.AddAuthorization((options, sp) =>
@@ -239,18 +251,7 @@ internal class Program
         #endregion
 
         #region Login pages
-
-        app.MapGet("/denied",  (async context =>
-        {
-            var returnUrl = context.GetRedirectUrl();
-            if (returnUrl == "/")
-            {
-                context.Response.Redirect(returnUrl);
-                return;
-            }
-            context.SendErrorPage(HttpStatusCode.Forbidden, "Access denied.", "Proxy failed to authorize you and forbidden access to this resource. \n" +
-                                                                              $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", "ERR_ACCESS_DENIED");
-        }));
+        
         app.MapGet("/login", async (context) => { context.Response.RedirectToLogin();});
         app.MapPost("/login", async (HttpContext context) =>
         {
