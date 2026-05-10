@@ -8,7 +8,7 @@ namespace MACRiverProxy;
 
 public static class Login
 {
-    public static void RedirectToLogin(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
+    public static async Task RedirectToLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
         var context = response.HttpContext;
         var token = context.User
@@ -25,7 +25,7 @@ public static class Login
         {
             Log.Information($"Sending client to login page with {code} code");
             response.StatusCode = (int)code;
-            response.WriteAsync(File.ReadAllText("./Pages/Login.html"));
+            await response.WriteAsync(await File.ReadAllTextAsync("./Pages/Login.html"));
 
             isDone = true;
         }
@@ -48,4 +48,7 @@ public static class Login
             }
         }
     }
+
+    public static void RedirectToLogin(this HttpResponse response,
+        HttpStatusCode code = HttpStatusCode.TemporaryRedirect) => RedirectToLoginAsync(response, code).Wait();
 }
