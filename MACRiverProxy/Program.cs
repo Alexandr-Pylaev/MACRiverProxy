@@ -205,7 +205,6 @@ internal class Program
         builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddDbContext<TokenStorage>();
-        builder.Services.AddSingleton<MACAuthentication>();
         builder.Services.AddLocalAuthTokenProvider();
         
         #endregion
@@ -230,9 +229,9 @@ internal class Program
             {
                 policyBuilder.Requirements.Add(new AssertionRequirement(_ => true));
             });
-            options.AddPolicy(Restricted, policyBuilder =>
+            options.AddPolicy(RouteStatic.Restricted, policyBuilder =>
             {
-                policyBuilder.RequireAssertion(_ => AuthenticateTokenForContext(sp.GetService<IHttpContextAccessor>()?.HttpContext!));
+                policyBuilder.RequireAssertion(_ => AuthorizeTokenForContext(sp.GetService<IHttpContextAccessor>()?.HttpContext!));
             });
         });
 
@@ -295,9 +294,8 @@ internal class Program
     private static async Task _LoginPage(HttpContext context)
     {
         var token = context.GetUserToken();
-        if (token is not null && VerifyToken(token,
-                context.RequestServices.GetService<TokenStorage>(),
-                GetTokenProvider(token, context.RequestServices)))
+        if (token is not null && token.VerifyToken(context.RequestServices.GetService<TokenStorage>(),
+                context.RequestServices.GetTokenProvider(token)))
         {
             context.RedirectToUrl();
         }
@@ -313,7 +311,7 @@ internal class Program
             context.Response.Redirect("/");
             return;
         }
-        if (await MACAuthentication.Singleton.SignIn(context, context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
+        if (await context.SignIn(context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
                 DateTime.Now.Add(TokenLifeSpan), login,pass))
         {
             context.RedirectToUrl();
@@ -326,7 +324,7 @@ internal class Program
     {
         var tokenAuthMethod = context.GetUserToken()?.AuthMethod;
         if (string.IsNullOrEmpty(tokenAuthMethod)) return;
-        if (await MACAuthentication.Singleton.SignOut(context))
+        if (await context.SignOut())
         {
             Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
         }
@@ -344,64 +342,10 @@ internal class Program
         }
         return false;
     }
-
-    public static bool AuthenticateTokenForRoute(IServiceProvider sp, Token? token, string routeId)
-    {
-        if (token is null) return false;
-        
-        var tokenStorageServ = sp.GetService<TokenStorage>()!;
-        var configServ = sp.GetService<IConfiguration>()!;
-        
-        var tokenProvider = GetTokenProvider(token, sp);
-        if (tokenProvider is null) return false;
-        
-        if (_GetRouteConfigValue<string?>(configServ, routeId, "AuthorizationPolicy") != Restricted) return true;
-        
-        var macLevel = _GetRouteConfigValue<byte?>(configServ, routeId, "MACLevel") ?? byte.MaxValue;
-        var macCategory = _GetRouteConfigValue<ulong?>(configServ, routeId, "MACCategory") ?? ulong.MaxValue;
-        
-        if (!VerifyToken(token, tokenStorageServ, tokenProvider))
-        {
-            Log.Information($"Token {token.Id} failed to verify.");
-            return false;
-        }
-
-        if (!token.HaveLevel(macLevel))
-        {
-            Log.Information($"Token {token.Id} failed MAC level check ({token?.MACLevel} < {macLevel}).");
-            return false;
-        }
-
-        if (!token.HaveCategories(macCategory))
-        {
-            Log.Information($"Token {token.Id} failed MAC category check (no {macCategory}).");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static T? _GetRouteConfigValue<T>(IConfiguration configServ, string routeId, string key)
-    {
-        return configServ.GetValue<T?>($"ReverseProxy:Routes:{routeId}:{key}");
-    }
-
-    private const string Restricted = "restricted";
-
-    private static bool AuthenticateTokenForContext(HttpContext context) =>
-        AuthenticateTokenForRoute(context.RequestServices,context.GetUserToken(),
+    
+    private static bool AuthorizeTokenForContext(HttpContext context) =>
+        context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
             context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
-
-    public static TokenProvider? GetTokenProvider(Token token, IServiceProvider sp)
-    {
-        var tokenProviderType = token?.GetTokenProviderType();
-        if (tokenProviderType is null) return null;
-        return (TokenProvider?) sp.GetService(tokenProviderType);
-    }
-
-    public static bool VerifyToken(Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider) =>
-        (tokenStorage?.CheckToken(token)?? false) 
-        && (tokenProvider?.VerifyToken(token!) ?? false);
 
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
 }

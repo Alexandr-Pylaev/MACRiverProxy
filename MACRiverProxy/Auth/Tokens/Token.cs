@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MACRiverProxy.Auth.MAC;
+using Serilog;
 
 namespace MACRiverProxy.Auth.Tokens;
 
@@ -60,4 +61,8 @@ public static class TokenStatic
             return NullTokenProvider.Singleton.CreateToken();
         }
     }
+    
+    public static bool VerifyToken(this Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider) =>
+        (tokenStorage?.CheckToken(token)?? false) 
+        && (tokenProvider?.VerifyToken(token!) ?? false);
 }
