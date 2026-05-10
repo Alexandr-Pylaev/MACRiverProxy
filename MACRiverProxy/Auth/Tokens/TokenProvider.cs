@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MACRiverProxy.Auth.Tokens;
 
@@ -52,5 +54,24 @@ public static class TokenProviderStatic
         {
             return false;
         }
+    }
+    
+    public static TokenProvider? GetTokenProvider(this IServiceProvider sp, Token token)
+    {
+        var tokenProviderType = token?.GetTokenProviderType();
+        if (tokenProviderType is null) return null;
+        return (TokenProvider?) sp.GetService(tokenProviderType);
+    }
+    
+    public static void AddTokenStorage(this IServiceCollection col)
+    {
+        col.TryAddScoped<TokenStorage>();
+    }
+    public static void UseTokenStorage(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var tokenStorage = scope.ServiceProvider.GetService<TokenStorage>();
+        tokenStorage?.Database.Migrate();
+        tokenStorage?.TokenStorageCleanup();
     }
 }

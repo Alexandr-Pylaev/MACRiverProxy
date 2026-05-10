@@ -42,16 +42,17 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenStor
 
 public static class LocalAuthTokenProviderStatic
 {
-    public static void AddLocalAuthTokenProvider(this IServiceCollection col, LocalAuthStorage? localAuthStorage = null,
-        TokenStorage? tokenStorage = null,
-        LocalAuthTokenProvider? authTokenProvider = null)
+    public static void AddLocalAuthTokenProvider(this IServiceCollection col)
     {
-        tokenStorage ??= new TokenStorage();
-        localAuthStorage ??= new LocalAuthStorage();
-        authTokenProvider ??= new LocalAuthTokenProvider(localAuthStorage, tokenStorage);
-        col.TryAddSingleton(tokenStorage);
-        col.TryAddSingleton(localAuthStorage);
-        col.TryAddSingleton(authTokenProvider);
-        localAuthStorage.Database.Migrate();
+        col.AddTokenStorage();
+        col.TryAddScoped<LocalAuthStorage>();
+        col.TryAddScoped<LocalAuthTokenProvider>();
+    }
+    
+    public static void UseLocalAuthTokenProvider(this WebApplication app)
+    {
+        app.UseTokenStorage();
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetService<LocalAuthStorage>()?.Database.Migrate();
     }
 }
