@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -28,156 +30,9 @@ internal class Program
             .WriteTo.Console()
             .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
             .CreateLogger();
-        if (args.Length > 0)
-        {
-            string command = args[0];
-            switch (command)
-            {
-                case "user":
-                    if (args.Length >= 3)
-                    {
-                        string userCommand = args[1];
-                        string username = args[2];
-                        var storage = new LocalAuthStorage();
-                        var user = storage.FindUser(username).Result;
-                        switch (userCommand)
-                        {
-                            case "set":
-                            case "delete":
-                            {
-                                if (user is null)
-                                {
-                                    Console.WriteLine("User not found.");
-                                    return;
-                                }
-                                break;
-                            }
-                        }
-                        switch (userCommand)
-                        {
-                            case "add":
-                                if (args.Length == 4)
-                                {
-                                    string pass = args[3];
-                                    if (pass.Length < 8)
-                                    {
-                                        Console.WriteLine("Password is too short.");
-                                        return;
-                                    }
-                                    storage.RegisterUser(username, pass).Wait();
-                                    Console.WriteLine($"User {username} was added.");
-                                }
-                                else if (args.Length > 4)
-                                {
-                                    Console.WriteLine("Too many arguments. Use help for more info.");
-                                    return;
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Not enough arguments. Use help for more info.");
-                                    return;
-                                }
-                                break;
-                            case "set": 
-                                if (args.Length > 4)
-                                {
-                                    string setType = args[3];
-                                    switch (setType)
-                                    {
-                                        case "mac":
-                                            if (args.Length > 6)
-                                            {
-                                                Console.WriteLine("Too many arguments. Use help for more info.");
-                                                return;
-                                            }
-                                            else if (args.Length >= 5)
-                                            {
-                                                string levelRaw = args[4];
-                                                string catRaw = $"{user!.MACCategory}";
-                                                if (args.Length == 6)
-                                                {
-                                                    catRaw = args[5];
-                                                }
-                                                if (!byte.TryParse(levelRaw, out var level) || !ulong.TryParse(catRaw, out var category))
-                                                {
-                                                    Console.WriteLine("Invalid arguments.");
-                                                    return;
-                                                }
-                                                user!.MACLevel = level;
-                                                user!.MACCategory = category;
-                                                storage.SaveChanges();
-                                                Console.WriteLine($"MAC for {username} was changed. \n" +
-                                                                  $"Be aware, that updated MAC will work only after proxy restart and user re-login.");
-                                            }
-                                            else
-                                            {
-                                                Console.WriteLine("Not enough arguments. Use help for more info.");
-                                                return;
-                                            }
-                                            break;
-                                        case "pass":
-                                                if (args.Length == 5)
-                                                {
-                                                    string pass = args[4];
-                                                    if (pass.Length < 8)
-                                                    {
-                                                        Console.WriteLine("Password is too short.");
-                                                        return;
-                                                    }
-                                                    storage.ChangePassword(username, pass).Wait();
-                                                    storage.SaveChanges();
-                                                    Console.WriteLine($"Password for {username} was changed.");
-                                                }
-                                                else if (args.Length > 5)
-                                                {
-                                                    Console.WriteLine("Too many arguments. Use help for more info.");
-                                                    return;
-                                                }
-                                                else
-                                                {
-                                                    Console.WriteLine("Not enough arguments. Use help for more info.");
-                                                    return;
-                                                } 
-                                                break;
-                                        default:
-                                            Console.WriteLine("Unknown set command.");
-                                            break;
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Not enough arguments. Use help for more info.");
-                                    return;
-                                }
-                                break;
-                            case "delete":
-                                Console.WriteLine(storage.DeleteUser(user!).Result
-                                    ? $"User {user!.Login} was removed."
-                                    : $"Failed to remove user {user!.Login}.");
-                                break;
-                            default:
-                                Console.WriteLine("Unknown user command.");
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Not enough arguments. Use help for more info.");
-                        break;
-                    }
-                    break;
-                case "help": 
-                    Console.WriteLine("user add [username] [pass] - add user");
-                    Console.WriteLine("user set [username] mac [level] [?category] - set user level (and category)");
-                    Console.WriteLine("user set [username] pass [pass] - set user password");
-                    Console.WriteLine("user delete [username] - deletes user");
-                    break;
-                default:
-                    Console.WriteLine("Unknown command.");
-                    break;
-            }
-            return;
-        }
+        bool bootServer = false;
+        bootServer = ExecuteCmd(args);
+        if (!bootServer) return;
         
         var builder = WebApplication.CreateBuilder(args);
 
@@ -278,6 +133,255 @@ internal class Program
         #endregion
 
         while (!app.Lifetime.ApplicationStopping.IsCancellationRequested) { }
+    }
+
+    private static bool ExecuteCmd(string[] args)
+    {
+        bool bootServer = false;
+        RootCommand rootCmd = new RootCommand( "MAC River proxy server and CLI tool.\nNo command is same as boot.");
+        Command bootCmd = new Command("boot", "Starts a proxy.");
+        Command userCmd = new Command("user", "User management");
+        Command userAddCmd = new Command("add", "Creates new user");
+        Command userDeleteCmd = new Command("del", "Deletes user by login");
+        Command userSetCmd = new Command("set", "Sets user's settings");
+        Command userSetPasswordCmd = new Command("password", "Sets user's password");
+        Command userSetMACCmd = new Command("mac", "Sets user's mandatory access control tag");
+        Command userSetMACLevelCmd = new Command("level", "Sets user's mandatory access control level");
+        Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category");
+        Argument<string[]> loginsArg = new Argument<string[]>("logins")
+        {
+            Arity = ArgumentArity.OneOrMore,
+            Description = "All logins that will be affected by command"
+        };
+        Argument<string> loginArg = new Argument<string>("login")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            Description = "Login that will be affected by command"
+        };
+
+        Argument<byte?> macLevelArg = new Argument<byte?>("mac-level")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            Description = "Mandatory access control level (0-255)",
+            DefaultValueFactory = _ => null
+        };
+        Argument<ulong?> macCategoryArg = new Argument<ulong?>("mac-category")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            Description = "Mandatory access control category (ulong bitmask)",
+            DefaultValueFactory = _ => null
+        };
+        
+        rootCmd.Add(userCmd);
+        rootCmd.Add(bootCmd);
+        
+        userCmd.Subcommands.Add(userAddCmd);
+        userCmd.Subcommands.Add(userDeleteCmd);
+        userCmd.Subcommands.Add(userSetCmd);
+        
+        userSetCmd.Subcommands.Add(userSetPasswordCmd);
+        userSetCmd.Subcommands.Add(userSetMACCmd);
+        
+        userSetMACCmd.Subcommands.Add(userSetMACLevelCmd);
+        userSetMACCmd.Subcommands.Add(userSetMACCategoryCmd);
+        
+        userAddCmd.Add(loginsArg);
+        userDeleteCmd.Add(loginsArg);
+        userSetPasswordCmd.Add(loginArg);
+        userSetMACCmd.Add(loginArg);
+        
+        userSetMACLevelCmd.Add(macLevelArg);
+        userSetMACCategoryCmd.Add(macCategoryArg);
+        
+        Action<ParseResult> bootServerAction = _ =>
+        {
+            bootServer = true;
+        };
+        
+        string[] logins = [];
+        List<LocalAuthUser> users = new();
+        LocalAuthStorage localAuthStorage = new LocalAuthStorage();
+        localAuthStorage.Database.Migrate();
+        
+        userAddCmd.Validators.Add((parseResult) =>
+        {
+            try
+            {
+                logins = parseResult.GetRequiredValue(loginsArg);
+            }
+            catch (InvalidOperationException ex)
+            {
+                parseResult.AddError("Login was not provided.");
+                return;
+            }
+            foreach (string login in logins)
+            {
+                if (localAuthStorage.IsUserRegistered(login).Result)
+                {
+                    parseResult.AddError($"Login {login} is already registered.");
+                }
+            }
+        });
+        
+        Action<CommandResult> validateUsersExists = parseResult =>
+        {
+            try
+            {
+                logins = parseResult.GetRequiredValue(loginsArg);
+            }
+            catch (InvalidOperationException ex)
+            {
+                parseResult.AddError("Login was not provided.");
+                return;
+            }
+            ForeachUserLogins(parseResult);
+        };
+        Action<CommandResult> validateUserExists = parseResult =>
+        {
+            try
+            {
+                logins = [parseResult.GetRequiredValue(loginArg)];
+            }
+            catch (InvalidOperationException ex)
+            {
+                parseResult.AddError("Login was not provided.");
+                return;
+            }
+            ForeachUserLogins(parseResult);
+        };
+        
+        userSetPasswordCmd.Validators.Add(validateUserExists);
+        userSetMACCmd.Validators.Add(validateUserExists);
+        userDeleteCmd.Validators.Add(validateUsersExists);
+        
+        ulong? category = 0;
+        userSetMACCategoryCmd.Validators.Add(result =>
+        {
+            try
+            {
+                category = result.GetValue(macCategoryArg);
+            }
+            catch (InvalidOperationException ex)
+            {
+                result.AddError("Mandatory access control category is invalid.");
+                return;
+            }
+
+            if (category is null) 
+                result.AddError("Mandatory access control category is not set.");
+        });
+        
+        byte? level = 0;
+        userSetMACLevelCmd.Validators.Add(result =>
+        {
+            try
+            {
+                level = result.GetValue(macLevelArg);
+            }
+            catch (InvalidOperationException ex)
+            {
+                result.AddError("Mandatory access control level is invalid.");
+                return;
+            }
+            if (level is null) 
+                result.AddError("Mandatory access control level is not set.");
+        });
+        
+        rootCmd.SetAction(bootServerAction);
+        bootCmd.SetAction(bootServerAction);
+        
+        userAddCmd.SetAction(async _ =>
+        {
+            var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+            foreach (string login in logins)
+            {
+                var pass = AuthStatic.GenerateRandomPassword(24);
+                localAuthStorage.RegisterUser(login, pass).Wait();
+                Log.Information($"Added user {login} with password [:::SECRET:::]");
+                sensitiveLogger.Information($"Password for user {login}: {pass}.");
+            }
+            Log.Information("Done.");
+        });
+        userDeleteCmd.SetAction(async _ =>
+        {
+            foreach (LocalAuthUser user in users)
+            {
+                localAuthStorage.DeleteUser(user).Wait();
+                Log.Information($"User {user.Login} deleted.");
+            }
+            Log.Information("Done.");
+        });
+        
+        userSetMACCategoryCmd.SetAction(async _ =>
+        {
+            LocalAuthUser user = users[0];
+            user.MACCategory = category ?? user.MACCategory;
+            await localAuthStorage.SaveChangesAsync();
+        });
+        
+        userSetMACLevelCmd.SetAction(async _ =>
+        {
+            LocalAuthUser user = users[0];
+            user.MACLevel = level ?? user.MACLevel;
+            await localAuthStorage.SaveChangesAsync();
+        });
+        
+        userSetPasswordCmd.SetAction(async _ =>
+        {
+            LocalAuthUser user = users[0];
+            Console.Write("Enter password: ");
+            var pass = string.Empty;
+            ConsoleKey key;
+            do
+            {
+                var keyInfo = Console.ReadKey(intercept: true);
+                key = keyInfo.Key;
+
+                if (key == ConsoleKey.Backspace && pass.Length > 0)
+                {
+                    Console.Write("\b \b");
+                    pass = pass[0..^1];
+                }
+                else if (!char.IsControl(keyInfo.KeyChar))
+                {
+                    Console.Write("*");
+                    pass += keyInfo.KeyChar;
+                }
+            } while (key != ConsoleKey.Enter);
+            Console.WriteLine();
+            try
+            {
+                localAuthStorage.ChangePassword(user, pass).Wait();
+                Log.Information($"Password changed for user {user.Login}");
+            }
+            catch (AggregateException ex)
+            {
+                if (ex.InnerException is ArgumentException)
+                {
+                    Log.Error(ex.InnerException.Message);
+                }
+            }
+        });
+        
+        void ForeachUserLogins(CommandResult parseResult)
+        {
+            users = new List<LocalAuthUser>(logins.Length);
+            LocalAuthUser? findedUser;
+            foreach (string login in logins)
+            {
+                findedUser = localAuthStorage.FindUser(login).Result;
+                if (findedUser is null)
+                {
+                    parseResult.AddError($"Login {login} does not exists.");
+                    continue;
+                }
+
+                users.Add(findedUser);
+            }
+        }
+        
+        rootCmd.Parse(args).Invoke();
+        return bootServer;
     }
 
     private static async Task _FakeRedirectAccessDenied(RedirectContext<CookieAuthenticationOptions> redirContext)
