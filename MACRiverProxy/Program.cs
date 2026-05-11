@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Serilog;
@@ -50,7 +52,12 @@ internal class Program
         builder.Services.AddSerilog();
         builder.Services.AddPersistentKeysDb();
         builder.Services.AddDataProtection()
-            .PersistKeysToDbContext<PersistentKeysDb>();
+            .PersistKeysToDbContext<PersistentKeysDb>().UseCryptographicAlgorithms(
+                new AuthenticatedEncryptorConfiguration
+                {
+                    EncryptionAlgorithm = EncryptionAlgorithm.AES_256_CBC,
+                    ValidationAlgorithm = ValidationAlgorithm.HMACSHA512
+                });;
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
             kestOpt.ListenAnyIP(80);
