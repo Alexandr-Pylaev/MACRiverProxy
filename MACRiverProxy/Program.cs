@@ -147,7 +147,10 @@ internal class Program
     private static bool ExecuteCmd(string[] args)
     {
         bool bootServer = false;
-        RootCommand rootCmd = new RootCommand( "MAC River proxy server and CLI tool.\nNo command is same as boot.");
+        RootCommand rootCmd = new RootCommand( "MAC River proxy server and CLI tool.\nNo command is same as boot.")
+        {
+            TreatUnmatchedTokensAsErrors = false
+        };
         Command bootCmd = new Command("boot", "Starts a proxy.");
         Command userCmd = new Command("user", "User management");
         Command userAddCmd = new Command("add", "Creates new user");
