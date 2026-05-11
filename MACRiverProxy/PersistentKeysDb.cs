@@ -11,3 +11,19 @@ public class PersistentKeysDb : DbContext, IDataProtectionKeyContext
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
 }
+
+public static class PersistentKeysDbStatic
+{
+    public static IServiceCollection AddPersistentKeysDb(this IServiceCollection servCollection)
+    {
+        servCollection.AddDbContext<PersistentKeysDb>();
+        return servCollection;
+    }
+
+    public static WebApplication UsePersistentKeysDb(this WebApplication servProvider)
+    {
+        using var scope = servProvider.Services.CreateScope();
+        scope.ServiceProvider.GetService<PersistentKeysDb>()!.Database.Migrate();
+        return servProvider;
+    }
+}

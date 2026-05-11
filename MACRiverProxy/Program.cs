@@ -48,6 +48,7 @@ internal class Program
         #region Builder app setup
 
         builder.Services.AddSerilog();
+        builder.Services.AddPersistentKeysDb();
         builder.Services.AddDataProtection()
             .PersistKeysToDbContext<PersistentKeysDb>();
         builder.WebHost.ConfigureKestrel(kestOpt =>
@@ -104,7 +105,8 @@ internal class Program
         app = builder.Build();
 
         #region App auth setup
-        
+
+        app.UsePersistentKeysDb();
         app.MapStaticAssets().ShortCircuit();
         app.UseLocalAuthTokenProvider();
         app.UseAuthentication();
