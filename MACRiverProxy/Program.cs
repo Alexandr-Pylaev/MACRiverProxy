@@ -33,7 +33,16 @@ internal class Program
         bool bootServer = false;
         bootServer = ExecuteCmd(args);
         if (!bootServer) return;
-        
+        try
+        {
+            Directory.CreateDirectory("./db");
+        }
+        catch (Exception ex) when(ex is IOException or UnauthorizedAccessException 
+                                      or PathTooLongException or DirectoryNotFoundException)
+        {
+            Log.Error($"Failed to create folder for databases: {ex.Message}");
+            return;
+        }
         var builder = WebApplication.CreateBuilder(args);
 
         #region Builder app setup
