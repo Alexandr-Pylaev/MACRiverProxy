@@ -28,10 +28,11 @@ internal class Program
     public static TimeSpan TokenLifeSpan;
     public static void Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
+        Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
             .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
             .CreateLogger();
+        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { Log.CloseAndFlush(); };
         bool bootServer = false;
         bootServer = ExecuteCmd(args);
         if (!bootServer) return;
@@ -135,8 +136,14 @@ internal class Program
         {
             options.UseForwarderErrorDisplayMiddleware();
         });
-        app.UseSerilogRequestLogging();
-
+        app.UseSerilogRequestLogging(serilogOpt =>
+        {
+            serilogOpt.MessageTemplate = "[{TraceIdentifier}] " + serilogOpt.MessageTemplate;
+            serilogOpt.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                diagnosticContext.Set("TraceIdentifier", httpContext.TraceIdentifier);
+            };
+        });
         app.Start();
         IsHttpsEnabled = _IsHttpsEnabled();
         if (IsHttpsEnabled)
