@@ -36,9 +36,11 @@ public static class ErrorPage
     private static async Task<string> GenerateErrorPage(string errorHeader, string errorMessage,
         string errorCode = ERR_GENERIC)
     {
-        return string.Format(await File.ReadAllTextAsync("./Pages/ErrorPage.html"),
-            errorHeader,
-            errorMessage.Replace("\n", "<br/>"), errorCode);
+        var fileData = await File.ReadAllTextAsync("./Pages/ErrorPage.html");
+        return fileData.Replace("@errorHeader",
+            errorHeader).Replace("@errorMessage",
+            errorMessage.Replace("\n", "<br/>"))
+            .Replace("@errorCode", errorCode);
     }
 
     public static void SendErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError,
