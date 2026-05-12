@@ -337,7 +337,7 @@ internal class Program
                 var pass = AuthStatic.GenerateRandomPassword(24);
                 localAuthStorage.RegisterUser(login, pass).Wait();
                 Log.Information($"Added user {login} with password [:::SECRET:::]");
-                sensitiveLogger.Information($"Password for user {login}: {pass}.");
+                sensitiveLogger.Information($"Password for user {login}: {pass}");
             }
             Log.Information("Done.");
         });
