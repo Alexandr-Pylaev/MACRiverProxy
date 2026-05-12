@@ -19,11 +19,10 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenStor
 
         var findedUser = await localAuthStorage.FindUser(login);
         if (!(findedUser?.VerifyPassword(password) ?? false)) return Empty;
-        var token = new Token(TokenProviderName)
+        var token = new Token(TokenProviderName, findedUser.Login)
         {
             MACCategory = findedUser.MACCategory,
-            MACLevel = findedUser.MACLevel,
-            AuthPayload = Encoding.UTF8.GetBytes(findedUser.Login)
+            MACLevel = findedUser.MACLevel
         };
         tokenStorage.RegisterToken(DateTime.Now.AddDays(1), token);
         return token;
@@ -31,7 +30,7 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenStor
 
     public override bool VerifyToken(Token token)
     {
-        return localAuthStorage.IsUserRegistered(Encoding.UTF8.GetString(token.AuthPayload)).Result;
+        return localAuthStorage.IsUserRegistered(token.UserIdentifier).Result;
     }
 
     public override bool DestroyToken(Token token)
