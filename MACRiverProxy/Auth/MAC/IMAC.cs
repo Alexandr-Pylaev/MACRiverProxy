@@ -24,7 +24,11 @@ public static class MAC
 
     public static bool HaveLevel(this IMAC mac, byte level) => mac.MACLevel >= level;
 
-    public static bool HaveCategories(this IMAC mac, ulong category) => (mac.MACCategory & category) != 0;
+    public static bool HaveCategories(this IMAC mac, ulong category)
+    {
+        if (category == 0) return true;
+        return (mac.MACCategory & category) != 0;
+    }
 
     public static bool HaveCategory(this IMAC mac, byte number)
     {
