@@ -35,7 +35,7 @@ public static class RouteStatic
 
         if (!token.HaveCategories(macCategory))
         {
-            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC category check (no {macCategory}).");
+            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC category check ({token.MACCategory} does not have {macCategory}).");
             return false;
         }
 
