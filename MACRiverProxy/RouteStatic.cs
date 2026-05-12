@@ -16,7 +16,7 @@ public static class RouteStatic
         var tokenProvider = sp.GetTokenProvider(token);
         if (tokenProvider is null) return false;
         
-        if (configServ.GetRouteConfigValue<string?>(routeId, "AuthorizationPolicy") != Restricted) return true;
+        if (configServ.GetRouteConfigValue<string?>(routeId, "AuthorizationPolicy")?.ToLower() != Restricted) return true;
         
         var macLevel = configServ.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MaxValue;
         var macCategory = configServ.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MaxValue;
