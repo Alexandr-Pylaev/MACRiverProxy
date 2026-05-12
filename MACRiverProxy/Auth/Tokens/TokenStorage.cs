@@ -9,10 +9,10 @@ public class TokenStorage : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
 
-    public void RegisterToken(DateTime expires, Token token)
+    public async Task RegisterToken(DateTime expires, Token token)
     {
         _RegisterToken(expires, token);
-        this.SaveChanges();
+        await this.SaveChangesAsync();
     }
 
     public IEnumerable<TokenKey> GetActiveTokenKeys => ActiveTokens;
@@ -21,68 +21,56 @@ public class TokenStorage : DbContext
     {
         TokenKey k = new TokenKey() {ExpireTime = expires};
         token.TokenKey = k;
-        lock (ActiveTokens)
-        {
-            var ent = ActiveTokens.Add(token.TokenKey);
-            token.TokenKey = ent.Entity;
-        }
+        var ent = ActiveTokens.Add(token.TokenKey);
+        token.TokenKey = ent.Entity;
     }
 
-    public void RevokeToken(Token token) => RevokeToken([token]);
-    public void RevokeToken(TokenKey token) => RevokeToken([token]);
+    public async Task RevokeToken(Token token) => await RevokeToken([token]);
+    public async Task RevokeToken(TokenKey token) => await RevokeToken([token]);
 
-    public void RegisterTokens(DateTime expires, params Token[] tokens)
+    public async Task RegisterTokens(DateTime expires, params Token[] tokens)
     {
         foreach (var token in tokens)
         {
             _RegisterToken(expires, token);
         }
 
-        this.SaveChanges();
+        await this.SaveChangesAsync();
     }
     
-    public void RevokeToken(params TokenKey[] tokens)
+    public async Task RevokeToken(params TokenKey[] tokens)
     {
-        lock (ActiveTokens)
-        {
-            foreach (var token in tokens)
-            { 
-                ActiveTokens.Remove(token);
-            }
+        foreach (var token in tokens)
+        { 
+            ActiveTokens.Remove(token);
         }
-        this.SaveChanges();
+        await this.SaveChangesAsync();
     }
-    public int RevokeTokens(string userIdentifier)
+    public async Task<int> RevokeTokens(string userIdentifier)
     {
         int count = 0;
-        lock (ActiveTokens)
-        {
-            foreach (var token in ActiveTokens.Where(t => t.UserIdentifier == userIdentifier))
-            { 
-                ActiveTokens.Remove(token);
-                count++;
-            }
+        foreach (var token in ActiveTokens.Where(t => t.UserIdentifier == userIdentifier))
+        { 
+            ActiveTokens.Remove(token);
+            count++;
         }
-        this.SaveChanges();
+        await this.SaveChangesAsync();
         return count;
     }
 
-    public void RevokeToken(params Token[] tokens) => RevokeToken(tokens.Where(x => x.TokenKey is not null).Select(x => x.TokenKey!).ToArray());
+    public async Task RevokeToken(params Token[] tokens) => await RevokeToken(tokens.Where(x => x.TokenKey is not null).Select(x => x.TokenKey!).ToArray());
 
-    public bool CheckToken(Token? token)
+    public async Task<bool> CheckToken(Token? token)
     {
         if (token is null || token == TokenProvider.Empty) return false;
-        token.TokenKey ??= ActiveTokens.Find(token.Id);
-        return CheckToken(token.TokenKey);
+        token.TokenKey ??= await ActiveTokens.FindAsync(token.Id);
+        return await CheckToken(token.TokenKey);
     }
     
-    public bool CheckToken(TokenKey? token)
+    public async Task<bool> CheckToken(TokenKey? token)
     {
         if (token is null) return false;
-        lock (ActiveTokens)
-        {
-            return ActiveTokens.Contains(token) && token!.ExpireTime >= DateTime.Now ;
-        }
+        return await ActiveTokens.ContainsAsync(token) && token!.ExpireTime >= DateTime.Now ;
     }
     /// <summary>
     /// Clean-ups all invalid tokens from storage
@@ -94,9 +82,9 @@ public class TokenStorage : DbContext
             List<TokenKey> invalidTokens = new();
             foreach (var token in ActiveTokens)
             {
-                if (!CheckToken(token))invalidTokens.Add(token);
+                if (!CheckToken(token).Result)invalidTokens.Add(token);
             }
-            RevokeToken(invalidTokens.ToArray());
+            RevokeToken(invalidTokens.ToArray()).Wait();
         }
     }
 }

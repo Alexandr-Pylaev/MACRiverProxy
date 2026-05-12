@@ -107,10 +107,10 @@ internal class Program
             });
             options.AddPolicy(RouteStatic.Restricted, policyBuilder =>
             {
-                policyBuilder.RequireAssertion(_ =>
+                policyBuilder.RequireAssertion(async _ =>
                 {
                     var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext!;
-                    var result = AuthorizeTokenForContext(httpContext);
+                    var result = await AuthorizeTokenForContext(httpContext);
                     var token = httpContext.GetUserToken();
                     Log.Information("[{HttpContextTraceIdentifier}{UserIdentifier}]: Token assertion result: {Result}", 
                         httpContext.TraceIdentifier, (token is null ? "" : $":{token.Id}:{token.UserIdentifier}"), result);
@@ -399,8 +399,8 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
-            Log.Information("Done.");
-            Log.Warning("Be aware that new MAC category applies only to new tokens. (You can revoke all tokens for user and force it to relogin.)");
+            tokenStorage.RevokeTokens(user.Login);
+            Log.Information("Done. All active tokens of this user is removed.");
         });
         
         userSetMACLevelCmd.SetAction(async _ =>
@@ -408,8 +408,8 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
-            Log.Information("Done.");
-            Log.Warning("Be aware that new MAC level applies only to new tokens. (You can revoke all tokens for user and force it to relogin.)");
+            tokenStorage.RevokeTokens(user.Login);
+            Log.Information("Done. All active tokens of this user is removed.");
         });
         
         userSetPasswordCmd.SetAction(async _ =>
@@ -489,7 +489,7 @@ internal class Program
     private static async Task _LoginPage(HttpContext context)
     {
         var token = context.GetUserToken();
-        if (token is not null && token.VerifyToken(context.RequestServices.GetService<TokenStorage>(),
+        if (token is not null && await token.VerifyToken(context.RequestServices.GetService<TokenStorage>(),
                 context.RequestServices.GetTokenProvider(token)))
         {
             context.RedirectToUrl();
@@ -538,8 +538,8 @@ internal class Program
         return false;
     }
     
-    private static bool AuthorizeTokenForContext(HttpContext context) =>
-        context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
+    private static async Task<bool> AuthorizeTokenForContext(HttpContext context) =>
+       await context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
             context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
 
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
