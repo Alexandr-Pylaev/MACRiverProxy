@@ -68,7 +68,7 @@ public static class TokenStatic
         }
     }
     
-    public static async Task<bool> VerifyToken(this Token? token, TokenStorage? tokenStorage, TokenProvider? tokenProvider) =>
+    public static async Task<bool> VerifyToken(this Token? token, TokenKeyStorage? tokenStorage, TokenProvider? tokenProvider) =>
         (await (tokenStorage?.CheckToken(token) ?? Task.FromResult(false))) 
         && (tokenProvider?.VerifyToken(token!) ?? false);
 }

@@ -2,7 +2,7 @@
 
 namespace MACRiverProxy.Auth.Tokens;
 
-public class TokenStorage : DbContext
+public class TokenKeyStorage : DbContext
 {
     protected DbSet<TokenKey> ActiveTokens { get; set; }
     public string DbPath { get; } = Path.Combine(Directory.GetCurrentDirectory(), "db/tokenstorage.db");

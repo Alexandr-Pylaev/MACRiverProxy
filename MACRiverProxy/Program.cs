@@ -80,7 +80,7 @@ internal class Program
         TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>("MACRiver:TokenLifeSpanMinutes") ?? 30);
         builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddDbContext<TokenStorage>();
+        builder.Services.AddDbContext<TokenKeyStorage>();
         builder.Services.AddLocalAuthTokenProvider();
         
         #endregion
@@ -256,7 +256,7 @@ internal class Program
         
         string[] logins = [];
         List<LocalAuthUser> users = new();
-        TokenStorage tokenStorage = new TokenStorage();
+        TokenKeyStorage tokenStorage = new TokenKeyStorage();
         LocalAuthStorage localAuthStorage = new LocalAuthStorage();
         localAuthStorage.Database.Migrate();
         
@@ -489,7 +489,7 @@ internal class Program
     private static async Task _LoginPage(HttpContext context)
     {
         var token = context.GetUserToken();
-        if (token is not null && await token.VerifyToken(context.RequestServices.GetService<TokenStorage>(),
+        if (token is not null && await token.VerifyToken(context.RequestServices.GetService<TokenKeyStorage>(),
                 context.RequestServices.GetTokenProvider(token)))
         {
             context.RedirectToUrl();

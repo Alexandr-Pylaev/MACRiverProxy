@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MACRiverProxy.Auth.LocalAuth;
 
-public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenStorage tokenStorage) : TokenProvider
+public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenKeyStorage tokenStorage) : TokenProvider
 {
     public override Token CreateToken(params dynamic[]? args) => CreateTokenAsync(args?[0], args?[1]).Result;
 
