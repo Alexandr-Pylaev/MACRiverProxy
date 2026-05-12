@@ -6,7 +6,7 @@ namespace MACRiverProxy;
 
 public static class RouteStatic
 {
-    public static bool AuthorizeTokenForRoute(this Token? token, IServiceProvider sp, string routeId)
+    public static async Task<bool> AuthorizeTokenForRoute(this Token? token, IServiceProvider sp, string routeId)
     {
         if (token is null) return false;
         
@@ -21,7 +21,7 @@ public static class RouteStatic
         var macLevel = configServ.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MaxValue;
         var macCategory = configServ.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MaxValue;
         
-        if (!token.VerifyToken(tokenStorageServ, tokenProvider))
+        if (!(await token.VerifyToken(tokenStorageServ, tokenProvider)))
         {
             Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed to verify.");
             return false;
