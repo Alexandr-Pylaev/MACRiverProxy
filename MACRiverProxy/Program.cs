@@ -17,8 +17,10 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Primitives;
 using Serilog;
+using Serilog.Enrichers;
 using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Model;
 
@@ -31,6 +33,7 @@ internal class Program
         Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
             .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
+            .Enrich.WithCorrelationId()
             .CreateLogger();
         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { Log.CloseAndFlush(); };
         bool bootServer = false;
@@ -104,7 +107,15 @@ internal class Program
             });
             options.AddPolicy(RouteStatic.Restricted, policyBuilder =>
             {
-                policyBuilder.RequireAssertion(_ => AuthorizeTokenForContext(sp.GetService<IHttpContextAccessor>()?.HttpContext!));
+                policyBuilder.RequireAssertion(_ =>
+                {
+                    var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext!;
+                    var result = AuthorizeTokenForContext(httpContext);
+                    var token = httpContext.GetUserToken();
+                    Log.Information("[{HttpContextTraceIdentifier}{UserIdentifier}]: Token assertion result: {Result}", 
+                        httpContext.TraceIdentifier, (token is null ? "" : ":"+token.UserIdentifier), result);
+                    return result;
+                });
             });
         });
 
