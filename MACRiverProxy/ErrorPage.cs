@@ -18,7 +18,7 @@ public static class ErrorPage
         Log.Information($"Throwing error to client: {errorCode}");
         try
         {
-            await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage), code);
+            await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage, errorCode), code);
         }
         catch (FileNotFoundException e)
         {
@@ -33,11 +33,12 @@ public static class ErrorPage
         }
     }
 
-    private static async Task<string> GenerateErrorPage(string errorHeader, string errorMessage)
+    private static async Task<string> GenerateErrorPage(string errorHeader, string errorMessage,
+        string errorCode = ERR_GENERIC)
     {
         return string.Format(await File.ReadAllTextAsync("./Pages/ErrorPage.html"),
             errorHeader,
-            errorMessage.Replace("\n", "<br/>"));
+            errorMessage.Replace("\n", "<br/>"), errorCode);
     }
 
     public static void SendErrorPage(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError,
