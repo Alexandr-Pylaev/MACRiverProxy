@@ -9,4 +9,5 @@ public class TokenKey
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public string Key { get; init; }
     public DateTime ExpireTime { get; set; }
+    public string UserIdentifier { get; set; }
 }
