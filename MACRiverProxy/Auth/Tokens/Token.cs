@@ -6,7 +6,7 @@ using Serilog;
 
 namespace MACRiverProxy.Auth.Tokens;
 
-public sealed class Token(string authMethod) : IMAC
+public sealed class Token(string authMethod, string userIdentifier) : IMAC
 {
     public string Id { get; set; }
     public DateTime ExpireTime { get; private set; }
@@ -14,6 +14,11 @@ public sealed class Token(string authMethod) : IMAC
     public ulong MACCategory { get; set; }
     public string AuthMethod { get; set; } = authMethod;
     public byte[] AuthPayload { get; set; } = [];
+    /// <summary>
+    /// Text, that identifies user and allow user tracking
+    /// </summary>
+    /// <remarks>Always set this field in <see cref="TokenProvider"/> because this field is used for tracking user activity</remarks>
+    public string UserIdentifier { get; set; } = userIdentifier;
 
     [JsonIgnore]
     public TokenKey? TokenKey
