@@ -400,7 +400,7 @@ internal class Program
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
             Log.Information("Done.");
-            Log.Warning("Be aware that new MAC category applies only to new tokens.");
+            Log.Warning("Be aware that new MAC category applies only to new tokens. (You can revoke all tokens for user and force it to relogin.)");
         });
         
         userSetMACLevelCmd.SetAction(async _ =>
@@ -409,7 +409,7 @@ internal class Program
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
             Log.Information("Done.");
-            Log.Warning("Be aware that new MAC level applies only to new tokens.");
+            Log.Warning("Be aware that new MAC level applies only to new tokens. (You can revoke all tokens for user and force it to relogin.)");
         });
         
         userSetPasswordCmd.SetAction(async _ =>
