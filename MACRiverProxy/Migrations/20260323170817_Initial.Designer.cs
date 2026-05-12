@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MACRiverProxy.Migrations
 {
-    [DbContext(typeof(TokenStorage))]
+    [DbContext(typeof(TokenKeyStorage))]
     [Migration("20260323170817_Initial")]
     partial class Initial
     {

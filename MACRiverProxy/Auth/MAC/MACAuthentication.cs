@@ -10,7 +10,7 @@ public static class MACAuthenticationStatic
     public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
     {
         var token = provider.CreateToken(args);
-        var tokenStorage = context.RequestServices.GetService<TokenStorage>();
+        var tokenStorage = context.RequestServices.GetService<TokenKeyStorage>();
         if (tokenStorage is null)
         {
             throw new InvalidOperationException("Context does not have TokenStorage service.");
@@ -34,7 +34,7 @@ public static class MACAuthenticationStatic
         
         successful = provider is null;
         
-        context.RequestServices.GetService<TokenStorage>()!.RevokeToken(token);
+        context.RequestServices.GetService<TokenKeyStorage>()!.RevokeToken(token);
         provider?.DestroyToken(token);
         await context.SignOutAsync();
         return successful;

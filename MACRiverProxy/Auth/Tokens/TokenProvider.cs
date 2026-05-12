@@ -65,12 +65,12 @@ public static class TokenProviderStatic
     
     public static void AddTokenStorage(this IServiceCollection col)
     {
-        col.TryAddScoped<TokenStorage>();
+        col.TryAddScoped<TokenKeyStorage>();
     }
     public static void UseTokenStorage(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
-        var tokenStorage = scope.ServiceProvider.GetService<TokenStorage>();
+        var tokenStorage = scope.ServiceProvider.GetService<TokenKeyStorage>();
         tokenStorage?.Database.Migrate();
         tokenStorage?.TokenStorageCleanup();
     }

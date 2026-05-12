@@ -10,7 +10,7 @@ public static class RouteStatic
     {
         if (token is null) return false;
         
-        var tokenStorageServ = sp.GetService<TokenStorage>()!;
+        var tokenStorageServ = sp.GetService<TokenKeyStorage>()!;
         var configServ = sp.GetService<IConfiguration>()!;
         
         var tokenProvider = sp.GetTokenProvider(token);

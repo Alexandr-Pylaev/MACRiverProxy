@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MACRiverProxy.Migrations
 {
-    [DbContext(typeof(TokenStorage))]
-    partial class TokenStorageModelSnapshot : ModelSnapshot
+    [DbContext(typeof(TokenKeyStorage))]
+    partial class TokenKeyStorageModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
