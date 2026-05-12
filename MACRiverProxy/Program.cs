@@ -113,7 +113,7 @@ internal class Program
                     var result = AuthorizeTokenForContext(httpContext);
                     var token = httpContext.GetUserToken();
                     Log.Information("[{HttpContextTraceIdentifier}{UserIdentifier}]: Token assertion result: {Result}", 
-                        httpContext.TraceIdentifier, (token is null ? "" : ":"+token.UserIdentifier), result);
+                        httpContext.TraceIdentifier, (token is null ? "" : $":{token.Id}:{token.UserIdentifier}"), result);
                     return result;
                 });
             });
@@ -149,10 +149,12 @@ internal class Program
         });
         app.UseSerilogRequestLogging(serilogOpt =>
         {
-            serilogOpt.MessageTemplate = "[{TraceIdentifier}] " + serilogOpt.MessageTemplate;
+            serilogOpt.MessageTemplate = "[{TraceIdentifier}{TokenInfo}] " + serilogOpt.MessageTemplate;
             serilogOpt.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
                 diagnosticContext.Set("TraceIdentifier", httpContext.TraceIdentifier);
+                var token = httpContext.GetUserToken();
+                diagnosticContext.Set("TokenInfo", token is null ? "" : $":{token.UserIdentifier}");
             };
         });
         app.Start();
