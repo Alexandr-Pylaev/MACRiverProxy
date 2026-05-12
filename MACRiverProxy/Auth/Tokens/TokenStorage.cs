@@ -28,8 +28,8 @@ public class TokenStorage : DbContext
         }
     }
 
-    public void RevokeToken(Token token) => RevokeTokens([token]);
-    public void RevokeToken(TokenKey token) => RevokeTokens([token]);
+    public void RevokeToken(Token token) => RevokeToken([token]);
+    public void RevokeToken(TokenKey token) => RevokeToken([token]);
 
     public void RegisterTokens(DateTime expires, params Token[] tokens)
     {
@@ -41,7 +41,7 @@ public class TokenStorage : DbContext
         this.SaveChanges();
     }
     
-    public void RevokeTokens(params TokenKey[] tokens)
+    public void RevokeToken(params TokenKey[] tokens)
     {
         lock (ActiveTokens)
         {
@@ -52,8 +52,22 @@ public class TokenStorage : DbContext
         }
         this.SaveChanges();
     }
+    public int RevokeTokens(string userIdentifier)
+    {
+        int count = 0;
+        lock (ActiveTokens)
+        {
+            foreach (var token in ActiveTokens.Where(t => t.UserIdentifier == userIdentifier))
+            { 
+                ActiveTokens.Remove(token);
+                count++;
+            }
+        }
+        this.SaveChanges();
+        return count;
+    }
 
-    public void RevokeTokens(params Token[] tokens) => RevokeTokens(tokens.Where(x => x.TokenKey is not null).Select(x => x.TokenKey!).ToArray());
+    public void RevokeToken(params Token[] tokens) => RevokeToken(tokens.Where(x => x.TokenKey is not null).Select(x => x.TokenKey!).ToArray());
 
     public bool CheckToken(Token? token)
     {
@@ -82,7 +96,7 @@ public class TokenStorage : DbContext
             {
                 if (!CheckToken(token))invalidTokens.Add(token);
             }
-            RevokeTokens(invalidTokens.ToArray());
+            RevokeToken(invalidTokens.ToArray());
         }
     }
 }

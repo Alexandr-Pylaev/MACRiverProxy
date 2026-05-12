@@ -181,7 +181,9 @@ internal class Program
             TreatUnmatchedTokensAsErrors = false
         };
         Command bootCmd = new Command("boot", "Starts a proxy.");
-        Command tokenReset = new Command("token-key-revoke", "Revokes all active token keys.");
+        Command tokenCmd = new Command("token", "Token management.");
+        Command tokenRevokeCmd = new Command("revoke", "Revokes token for user identifier.");
+        Command tokenRevokeAllCmd = new Command("revoke-all", "Revokes all active tokens.");
         Command userCmd = new Command("user", "User management");
         Command userAddCmd = new Command("add", "Creates new user");
         Command userDeleteCmd = new Command("del", "Deletes user by login");
@@ -201,6 +203,12 @@ internal class Program
             Arity = ArgumentArity.ExactlyOne,
             Description = "Login that will be affected by command"
         };
+        Argument<string> userIdentifierArg = new Argument<string>("userIdentifier")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            Description = "Login that will be affected by command",
+            HelpName = "User Identifier"
+        };
 
         Argument<byte?> macLevelArg = new Argument<byte?>("mac-level")
         {
@@ -217,7 +225,10 @@ internal class Program
         
         rootCmd.Add(userCmd);
         rootCmd.Add(bootCmd);
-        rootCmd.Add(tokenReset);
+        rootCmd.Add(tokenCmd);
+        
+        tokenCmd.Add(tokenRevokeCmd);
+        tokenCmd.Add(tokenRevokeAllCmd);
         
         userCmd.Subcommands.Add(userAddCmd);
         userCmd.Subcommands.Add(userDeleteCmd);
@@ -233,6 +244,7 @@ internal class Program
         userDeleteCmd.Add(loginsArg);
         userSetPasswordCmd.Add(loginArg);
         userSetMACCmd.Add(loginArg);
+        tokenRevokeCmd.Add(userIdentifierArg);
         
         userSetMACLevelCmd.Add(macLevelArg);
         userSetMACCategoryCmd.Add(macCategoryArg);
@@ -335,7 +347,13 @@ internal class Program
         rootCmd.SetAction(bootServerAction);
         bootCmd.SetAction(bootServerAction);
         
-        tokenReset.SetAction(_ =>
+        tokenRevokeAllCmd.SetAction(cmdResult =>
+        {
+            Log.Information("{RemovedTokenCount} token key(s) was removed.", 
+                tokenStorage.RevokeTokens(cmdResult.GetRequiredValue(userIdentifierArg)));
+        });
+        
+        tokenRevokeAllCmd.SetAction(_ =>
         {
             Log.Warning("Attention! This action will revoke all active tokens. " +
                         "This means, that all current sessions will be invalid.");

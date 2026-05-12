@@ -29,6 +29,7 @@ public sealed class Token(string authMethod, string userIdentifier) : IMAC
             if (value is null) return;
             Id = value.Key;
             ExpireTime = value.ExpireTime;
+            UserIdentifier = value.UserIdentifier;
             _tokenKey = value;
         }
     }
