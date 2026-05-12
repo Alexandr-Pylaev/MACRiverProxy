@@ -15,6 +15,8 @@ public class TokenStorage : DbContext
         this.SaveChanges();
     }
 
+    public IEnumerable<TokenKey> GetActiveTokenKeys => ActiveTokens;
+
     private void _RegisterToken(DateTime expires, Token token)
     {
         TokenKey k = new TokenKey() {ExpireTime = expires};

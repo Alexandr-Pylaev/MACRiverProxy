@@ -181,12 +181,14 @@ internal class Program
             TreatUnmatchedTokensAsErrors = false
         };
         Command bootCmd = new Command("boot", "Starts a proxy.");
+        Command tokenReset = new Command("token-key-revoke", "Revokes all active token keys.");
         Command userCmd = new Command("user", "User management");
         Command userAddCmd = new Command("add", "Creates new user");
         Command userDeleteCmd = new Command("del", "Deletes user by login");
         Command userSetCmd = new Command("set", "Sets user's settings");
         Command userSetPasswordCmd = new Command("password", "Sets user's password");
-        Command userSetMACCmd = new Command("mac", "Sets user's mandatory access control tag");
+        Command userSetMACCmd = new Command("mac", "Sets user's mandatory access control tag " +
+                                                   "(be aware, that old tokens will still have old MAC tag)");
         Command userSetMACLevelCmd = new Command("level", "Sets user's mandatory access control level");
         Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category");
         Argument<string[]> loginsArg = new Argument<string[]>("logins")
@@ -215,6 +217,7 @@ internal class Program
         
         rootCmd.Add(userCmd);
         rootCmd.Add(bootCmd);
+        rootCmd.Add(tokenReset);
         
         userCmd.Subcommands.Add(userAddCmd);
         userCmd.Subcommands.Add(userDeleteCmd);
@@ -241,6 +244,7 @@ internal class Program
         
         string[] logins = [];
         List<LocalAuthUser> users = new();
+        TokenStorage tokenStorage = new TokenStorage();
         LocalAuthStorage localAuthStorage = new LocalAuthStorage();
         localAuthStorage.Database.Migrate();
         
@@ -331,6 +335,25 @@ internal class Program
         rootCmd.SetAction(bootServerAction);
         bootCmd.SetAction(bootServerAction);
         
+        tokenReset.SetAction(_ =>
+        {
+            Log.Warning("Attention! This action will revoke all active tokens. " +
+                        "This means, that all current sessions will be invalid.");
+            Log.Warning("Do you really want to proceed? (y/N)");
+            string response = "n";
+            do
+            {
+                Log.Information("Y or N.");
+                response = Console.ReadLine()?.ToLower() ?? "n";
+            } while (response != "y" || response != "n");
+            if (response == "n") return;
+            foreach (var activeTokenKey in tokenStorage.GetActiveTokenKeys)
+            {
+                tokenStorage.RevokeToken(activeTokenKey);
+                Log.Information("Token key {TokenKey} was revoked.", activeTokenKey);
+            }
+        });
+        
         userAddCmd.SetAction(async _ =>
         {
             var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
@@ -358,6 +381,8 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
+            Log.Information("Done.");
+            Log.Warning("Be aware that new MAC category applies only to new tokens.");
         });
         
         userSetMACLevelCmd.SetAction(async _ =>
@@ -365,6 +390,8 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
+            Log.Information("Done.");
+            Log.Warning("Be aware that new MAC level applies only to new tokens.");
         });
         
         userSetPasswordCmd.SetAction(async _ =>
