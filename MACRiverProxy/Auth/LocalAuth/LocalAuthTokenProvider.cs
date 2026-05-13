@@ -35,6 +35,18 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenKeyS
     {
         return true;
     }
+
+    public override Token CreateTokenFromForm(IFormCollection form)
+    {
+        if (!form.TryGetValue("passwordInput", out var pass)
+            || !form.TryGetValue("loginInput", out var login)
+            || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login))
+        {
+            return Empty;
+        }
+
+        return CreateToken(login, pass);
+    }
 }
 
 public static class LocalAuthTokenProviderStatic

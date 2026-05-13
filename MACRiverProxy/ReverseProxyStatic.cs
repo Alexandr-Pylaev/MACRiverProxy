@@ -53,4 +53,9 @@ public static class ReverseProxyStatic
         });
         return proxyOpt;
     }
+    
+    public static string EscapeCharactersForUrl(this string text)
+    {
+        return text.Replace(" ", "%20");
+    }
 }

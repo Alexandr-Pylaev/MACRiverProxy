@@ -9,6 +9,7 @@ public abstract class TokenProvider
     public abstract Token CreateToken(params dynamic[]? args);
     public abstract bool VerifyToken(Token token);
     public abstract bool DestroyToken(Token token);
+    public abstract Token CreateTokenFromForm(IFormCollection form);
     public static Token Empty => _empty;
     private static Token _empty = NullTokenProvider.Singleton.CreateToken();
     protected string TokenProviderName 
@@ -23,6 +24,12 @@ public abstract class TokenProvider
     }
 
     public const string TOKEN_PROVIDER_POSTFIX = "TokenProvider";
+    public static Type? GetTokenProviderType(string authMethod)
+    {
+        return AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(ass => ass.GetTypes()).FirstOrDefault(t => 
+                t?.Name.EndsWith(authMethod + TokenProvider.TOKEN_PROVIDER_POSTFIX) ?? false, null);
+    }
 }
 
 public static class TokenProviderStatic
@@ -32,12 +39,7 @@ public static class TokenProviderStatic
         return (Activator.CreateInstance(token.GetTokenProviderType()!, args) as TokenProvider)!;
     }
 
-    public static Type? GetTokenProviderType(this Token token)
-    {
-        return AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(ass => ass.GetTypes()).FirstOrDefault(t => 
-                t?.Name.EndsWith(token.AuthMethod + TokenProvider.TOKEN_PROVIDER_POSTFIX) ?? false, null);
-    }
+    public static Type? GetTokenProviderType(this Token token) => TokenProvider.GetTokenProviderType(token.AuthMethod);
 
     public static bool TryCreateTokenProvider(this Token token, out TokenProvider? provider, params object?[]? args)
     {
@@ -59,6 +61,13 @@ public static class TokenProviderStatic
     public static TokenProvider? GetTokenProvider(this IServiceProvider sp, Token token)
     {
         var tokenProviderType = token.GetTokenProviderType();
+        if (tokenProviderType is null) return null;
+        return (TokenProvider?) sp.GetService(tokenProviderType);
+    }
+    
+    public static TokenProvider? GetTokenProvider(this IServiceProvider sp, string authMethod)
+    {
+        var tokenProviderType = TokenProvider.GetTokenProviderType(authMethod);
         if (tokenProviderType is null) return null;
         return (TokenProvider?) sp.GetService(tokenProviderType);
     }
