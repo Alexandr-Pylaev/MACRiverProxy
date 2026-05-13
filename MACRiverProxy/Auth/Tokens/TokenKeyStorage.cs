@@ -70,7 +70,7 @@ public class TokenKeyStorage : DbContext
     public async Task<bool> CheckToken(TokenKey? token)
     {
         if (token is null) return false;
-        return await ActiveTokens.ContainsAsync(token) && token!.ExpireTime >= DateTime.Now ;
+        return await ActiveTokens.ContainsAsync(token) && token.ExpireTime >= DateTime.Now ;
     }
     /// <summary>
     /// Clean-ups all invalid tokens from storage

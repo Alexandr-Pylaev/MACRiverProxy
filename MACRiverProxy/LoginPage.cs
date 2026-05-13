@@ -1,7 +1,4 @@
 ﻿using System.Net;
-using System.Text;
-using MACRiverProxy.Auth.Tokens;
-using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace MACRiverProxy;

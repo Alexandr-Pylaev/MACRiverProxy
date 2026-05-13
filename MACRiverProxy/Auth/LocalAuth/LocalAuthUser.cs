@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using MACRiverProxy.Auth.MAC;
 
 namespace MACRiverProxy.Auth.LocalAuth;
@@ -12,6 +11,7 @@ public class LocalAuthUser : IMAC
     public string Login { get; set; }
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
+    [StringLength(60)]
     public string PasswordHash { get; protected set; }
 
     public static LocalAuthUser CreateNewUser(string login, string password)

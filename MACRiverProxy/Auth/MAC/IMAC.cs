@@ -1,5 +1,6 @@
 ﻿namespace MACRiverProxy.Auth.MAC;
 
+// ReSharper disable InconsistentNaming
 public interface IMAC
 {
     public byte MACLevel { get; set; }

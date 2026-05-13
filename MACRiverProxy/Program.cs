@@ -1,28 +1,21 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Net;
-using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
-using MACRiverProxy;
 using MACRiverProxy.Auth;
 using MACRiverProxy.Auth.LocalAuth;
 using MACRiverProxy.Auth.MAC;
 using MACRiverProxy.Auth.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Console;
-using Microsoft.Extensions.Primitives;
 using Serilog;
-using Serilog.Enrichers;
-using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Model;
+
+namespace MACRiverProxy;
 
 internal class Program
 {
@@ -35,9 +28,8 @@ internal class Program
             .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
             .Enrich.WithCorrelationId()
             .CreateLogger();
-        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { Log.CloseAndFlush(); };
-        bool bootServer = false;
-        bootServer = ExecuteCmd(args);
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => { Log.CloseAndFlush(); };
+        bool bootServer = ExecuteCmd(args);
         if (!bootServer) return;
         try
         {
@@ -61,7 +53,7 @@ internal class Program
                 {
                     EncryptionAlgorithm = EncryptionAlgorithm.AES_256_CBC,
                     ValidationAlgorithm = ValidationAlgorithm.HMACSHA512
-                });;
+                });
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
             kestOpt.ListenAnyIP(80);
@@ -189,10 +181,13 @@ internal class Program
         Command userDeleteCmd = new Command("del", "Deletes user by login");
         Command userSetCmd = new Command("set", "Sets user's settings");
         Command userSetPasswordCmd = new Command("password", "Sets user's password");
+        // ReSharper disable InconsistentNaming
         Command userSetMACCmd = new Command("mac", "Sets user's mandatory access control tag " +
+                                                   
                                                    "(be aware, that old tokens will still have old MAC tag)");
         Command userSetMACLevelCmd = new Command("level", "Sets user's mandatory access control level");
         Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category");
+        // ReSharper restore InconsistentNaming
         Argument<string[]> loginsArg = new Argument<string[]>("logins")
         {
             Arity = ArgumentArity.OneOrMore,
@@ -266,7 +261,7 @@ internal class Program
             {
                 logins = parseResult.GetRequiredValue(loginsArg);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 parseResult.AddError("Login was not provided.");
                 return;
@@ -286,7 +281,7 @@ internal class Program
             {
                 logins = parseResult.GetRequiredValue(loginsArg);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 parseResult.AddError("Login was not provided.");
                 return;
@@ -299,7 +294,7 @@ internal class Program
             {
                 logins = [parseResult.GetRequiredValue(loginArg)];
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 parseResult.AddError("Login was not provided.");
                 return;
@@ -318,7 +313,7 @@ internal class Program
             {
                 category = result.GetValue(macCategoryArg);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 result.AddError("Mandatory access control category is invalid.");
                 return;
@@ -335,7 +330,7 @@ internal class Program
             {
                 level = result.GetValue(macLevelArg);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 result.AddError("Mandatory access control level is invalid.");
                 return;
@@ -353,12 +348,12 @@ internal class Program
                 tokenStorage.RevokeTokens(cmdResult.GetRequiredValue(userIdentifierArg)));
         });
         
-        tokenRevokeAllCmd.SetAction(_ =>
+        tokenRevokeAllCmd.SetAction(async _ =>
         {
             Log.Warning("Attention! This action will revoke all active tokens. " +
                         "This means, that all current sessions will be invalid.");
             Log.Warning("Do you really want to proceed? (y/N)");
-            string response = "n";
+            string response;
             do
             {
                 Log.Information("Y or N.");
@@ -367,12 +362,12 @@ internal class Program
             if (response == "n") return;
             foreach (var activeTokenKey in tokenStorage.GetActiveTokenKeys)
             {
-                tokenStorage.RevokeToken(activeTokenKey);
+                await tokenStorage.RevokeToken(activeTokenKey);
                 Log.Information("Token key {TokenKey} was revoked.", activeTokenKey);
             }
         });
         
-        userAddCmd.SetAction(async _ =>
+        userAddCmd.SetAction( _ =>
         {
             var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
             foreach (string login in logins)
@@ -384,7 +379,7 @@ internal class Program
             }
             Log.Information("Done.");
         });
-        userDeleteCmd.SetAction(async _ =>
+        userDeleteCmd.SetAction( _ =>
         {
             foreach (LocalAuthUser user in users)
             {
@@ -399,7 +394,7 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
-            tokenStorage.RevokeTokens(user.Login);
+            await tokenStorage.RevokeTokens(user.Login);
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
@@ -408,11 +403,11 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
-            tokenStorage.RevokeTokens(user.Login);
+            await tokenStorage.RevokeTokens(user.Login);
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
-        userSetPasswordCmd.SetAction(async _ =>
+        userSetPasswordCmd.SetAction( _ =>
         {
             LocalAuthUser user = users[0];
             Console.Write("Enter password: ");
@@ -457,10 +452,9 @@ internal class Program
         void ForeachUserLogins(CommandResult parseResult)
         {
             users = new List<LocalAuthUser>(logins.Length);
-            LocalAuthUser? findedUser;
             foreach (string login in logins)
             {
-                findedUser = localAuthStorage.FindUser(login).Result;
+                var findedUser = localAuthStorage.FindUser(login).Result;
                 if (findedUser is null)
                 {
                     parseResult.AddError($"Login {login} does not exists.");
@@ -539,7 +533,7 @@ internal class Program
     }
     
     private static async Task<bool> AuthorizeTokenForContext(HttpContext context) =>
-       await context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
+        await context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
             context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
 
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();

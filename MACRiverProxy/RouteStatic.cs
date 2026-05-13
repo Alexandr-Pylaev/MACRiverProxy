@@ -29,7 +29,7 @@ public static class RouteStatic
 
         if (!token.HaveLevel(macLevel))
         {
-            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC level check ({token?.MACLevel} < {macLevel}).");
+            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC level check ({token.MACLevel} < {macLevel}).");
             return false;
         }
 

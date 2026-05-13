@@ -7,7 +7,7 @@ public static class AuthStatic
 {
     public static IServiceCollection AddAuthorization(this IServiceCollection services,
         Action<AuthorizationOptions, IServiceProvider> configure) {
-        services.AddOptions<AuthorizationOptions>().Configure<IServiceProvider>(configure);
+        services.AddOptions<AuthorizationOptions>().Configure(configure);
         return services.AddAuthorization();
     }
 
