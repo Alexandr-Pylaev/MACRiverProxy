@@ -11,7 +11,7 @@ public abstract class TokenProvider
     public abstract bool DestroyToken(Token token);
     public abstract Token CreateTokenFromForm(IFormCollection form);
     public static Token Empty => _empty;
-    private static Token _empty = NullTokenProvider.Singleton.CreateToken();
+    private static Token _empty = new Token("Null", "");
     protected string TokenProviderName 
     {
         get
