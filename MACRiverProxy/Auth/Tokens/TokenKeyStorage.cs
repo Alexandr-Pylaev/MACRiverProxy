@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MACRiverProxy.Auth.Tokens;
 
@@ -137,5 +138,28 @@ public class TokenKeyStorage : DbContext
             }
             RevokeToken(invalidTokens.ToArray()).Wait();
         }
+    }
+}
+
+public static class TokenKeyStorageStatic
+{
+    /// <summary>
+    /// Add <see cref="TokenKeyStorage"/> to <see cref="IServiceCollection"/>
+    /// </summary>
+    /// <param name="col">Service collection</param>
+    public static void AddTokenKeyStorage(this IServiceCollection col)
+    {
+        col.TryAddScoped<TokenKeyStorage>();
+    }
+    /// <summary>
+    /// Activates <see cref="TokenKeyStorage"/>
+    /// </summary>
+    /// <param name="app">Web application</param>
+    public static void UseTokenStorage(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var tokenStorage = scope.ServiceProvider.GetService<TokenKeyStorage>();
+        tokenStorage?.Database.Migrate();
+        tokenStorage?.TokenStorageCleanup();
     }
 }
