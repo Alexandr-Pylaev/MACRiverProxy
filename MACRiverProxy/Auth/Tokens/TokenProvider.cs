@@ -37,7 +37,7 @@ public abstract class TokenProvider
     protected string TokenProviderName 
     {
         get
-        {
+        { // Just strips TOKEN_PROVIDER_POSTFIX from class name if exists
             var name = this.GetType().Name;
             return name[..(name.Contains(TOKEN_PROVIDER_POSTFIX) 
                 ? name.LastIndexOf(TOKEN_PROVIDER_POSTFIX, StringComparison.InvariantCulture) 
@@ -53,8 +53,11 @@ public abstract class TokenProvider
     /// <returns>Type of <see cref="TokenProvider"/></returns>
     public static Type? GetTokenProviderType(string authMethod)
     {
+        // Scans all loaded assemblies
         return AppDomain.CurrentDomain.GetAssemblies()
+            // Gets all types from them
             .SelectMany(ass => ass.GetTypes()).FirstOrDefault(t => 
+                // And finds type, that have name authMethod + TOKEN_PROVIDER_POSTFIX
                 t?.Name.EndsWith(authMethod + TokenProvider.TOKEN_PROVIDER_POSTFIX) ?? false, null);
     }
 }
@@ -94,6 +97,7 @@ public static class TokenProviderStatic
             provider = token.CreateTokenProvider(args);
             return true;
         }
+        // All this exception types are types from Activator.CreateInstance()
         catch (Exception ex) when (ex is ArgumentNullException or TargetInvocationException 
                                        or TypeLoadException or ArgumentException 
                                        or MethodAccessException or MemberAccessException 
