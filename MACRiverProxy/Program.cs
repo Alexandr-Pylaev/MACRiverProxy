@@ -105,7 +105,7 @@ internal class Program
                     var result = await AuthorizeTokenForContext(httpContext);
                     var token = httpContext.GetUserToken();
                     Log.Information("[{HttpContextTraceIdentifier}{UserIdentifier}]: Token assertion result: {Result}", 
-                        httpContext.TraceIdentifier, (token is null ? "" : $":{token.TokenKeyId}:{token.UserIdentifier}"), result);
+                        httpContext.TraceIdentifier, (token is null ? "" : $":{token.TokenKey}:{token.UserIdentifier}"), result);
                     return result;
                 });
             });
