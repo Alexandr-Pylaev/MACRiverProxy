@@ -70,6 +70,21 @@ public sealed class Token(string authMethod, string userIdentifier) : IMACTag
     /// Token claim type name
     /// </summary>
     public const string TOKEN_CLAIM_NAME = "Token";
+
+    public static bool operator ==(Token a, Token b)
+    {
+        return a.TokenKey == b.TokenKey && a.ExpireTime == b.ExpireTime
+                                        && a.MACLevel == b.MACLevel && a.MACCategory == b.MACCategory &&
+                                        a.AuthMethod == b.AuthMethod && a.UserIdentifier == b.UserIdentifier &&
+                                        a.AuthPayload == b.AuthPayload;
+    }
+    public static bool operator !=(Token a, Token b)
+    {
+        return a.TokenKey != b.TokenKey || a.ExpireTime != b.ExpireTime
+                                        || a.MACLevel != b.MACLevel || a.MACCategory != b.MACCategory ||
+                                        a.AuthMethod != b.AuthMethod || a.UserIdentifier != b.UserIdentifier ||
+                                        a.AuthPayload !=  b.AuthPayload;
+    }
 }
 
 public static class TokenStatic
