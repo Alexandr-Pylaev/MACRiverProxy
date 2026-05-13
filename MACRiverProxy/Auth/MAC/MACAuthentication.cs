@@ -29,7 +29,7 @@ public static class MACAuthenticationStatic
     public static async Task<bool> SignOut(this HttpContext context)
     {
         var token = context.GetUserToken();
-        if (token is null) return false;
+        if (token is null) return true;
         var provider = context.RequestServices.GetTokenProvider(token);
         
         var successful = provider is null;
