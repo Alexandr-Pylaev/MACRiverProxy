@@ -35,12 +35,16 @@ public class LocalAuthUser : IMACTag
     /// </summary>
     /// <param name="login">User login</param>
     /// <param name="password">User password</param>
+    /// <param name="macLevel">MAC tag level</param>
+    /// <param name="macCategory">MAC tag category</param>
     /// <returns>New unregistered user.</returns>
-    public static LocalAuthUser CreateNewUser(string login, string password)
+    public static LocalAuthUser CreateNewUser(string login, string password, byte macLevel = 0, ulong macCategory=0ul)
     {
         var user = new LocalAuthUser()
         {
-            Login = login
+            Login = login,
+            MACLevel = macLevel,
+            MACCategory = macCategory
         };
         user.SetPassword(password);
         return user;
