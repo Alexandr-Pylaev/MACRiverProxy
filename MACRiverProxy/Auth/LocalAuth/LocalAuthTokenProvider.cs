@@ -53,7 +53,7 @@ public static class LocalAuthTokenProviderStatic
 {
     public static void AddLocalAuthTokenProvider(this IServiceCollection col)
     {
-        col.AddTokenStorage();
+        col.AddTokenKeyStorage();
         col.TryAddScoped<LocalAuthStorage>();
         col.TryAddScoped<LocalAuthTokenProvider>();
     }
