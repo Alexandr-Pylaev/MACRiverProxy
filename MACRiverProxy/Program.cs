@@ -507,7 +507,13 @@ internal class Program
             context.Response.RedirectWithLoginError("Failed to use selected auth method.");
             return;
         }
-        if (await context.SignIn(tokenProvider, DateTime.Now.Add(TokenLifeSpan)))
+        if (tokenProvider is not FormTokenProvider)
+        {
+            Log.Warning("Requested token provider {authMethod} is not form token provider.", authMethod);
+            context.Response.RedirectWithLoginError("This auth method does not supports login form.");
+            return;
+        }
+        if (await context.SignIn((FormTokenProvider)tokenProvider, DateTime.Now.Add(TokenLifeSpan)))
         {
             context.RedirectToUrl();
             return;

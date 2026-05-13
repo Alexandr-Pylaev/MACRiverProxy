@@ -8,7 +8,7 @@ namespace MACRiverProxy.Auth.MAC;
 // ReSharper disable once InconsistentNaming
 public static class MACAuthenticationStatic
 {
-    public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires)
+    public static async Task<bool> SignIn(this HttpContext context, FormTokenProvider provider, DateTime expires)
     {
         var token = provider.CreateTokenFromForm(context.Request.Form);
         var tokenStorage = context.RequestServices.GetService<TokenKeyStorage>();
