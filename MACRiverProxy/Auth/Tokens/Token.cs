@@ -30,9 +30,9 @@ public sealed class Token(string authMethod, string userIdentifier) : IMACTag
     /// <summary>
     /// Token key object.
     /// </summary>
-    /// <remarks>Can be null when <see cref="TokenKey"/> is not same as in <see cref="TokenKeyEntry"/></remarks>
+    /// <remarks>Can be null when <see cref="TokenKey"/> is not same as in <see cref="TokenKeyModel"/></remarks>
     [JsonIgnore]
-    public TokenKey? TokenKeyEntry
+    public TokenKey? TokenKeyModel
     {
         get
         {

@@ -20,9 +20,9 @@ public class TokenKeyStorage : DbContext
     private void _RegisterToken(DateTime expires, Token token)
     {
         TokenKey k = new TokenKey() {ExpireTime = expires};
-        token.TokenKeyEntry = k;
-        var ent = ActiveTokens.Add(token.TokenKeyEntry);
-        token.TokenKeyEntry = ent.Entity;
+        token.TokenKeyModel = k;
+        var ent = ActiveTokens.Add(token.TokenKeyModel);
+        token.TokenKeyModel = ent.Entity;
     }
 
     public async Task RevokeToken(Token token) => await RevokeToken([token]);
@@ -58,13 +58,13 @@ public class TokenKeyStorage : DbContext
         return count;
     }
 
-    public async Task RevokeToken(params Token[] tokens) => await RevokeToken(tokens.Where(x => x.TokenKeyEntry is not null).Select(x => x.TokenKeyEntry!).ToArray());
+    public async Task RevokeToken(params Token[] tokens) => await RevokeToken(tokens.Where(x => x.TokenKeyModel is not null).Select(x => x.TokenKeyModel!).ToArray());
 
     public async Task<bool> CheckToken(Token? token)
     {
         if (token is null || token == TokenProvider.Empty) return false;
-        token.TokenKeyEntry ??= await ActiveTokens.FindAsync(token.TokenKey);
-        return await CheckToken(token.TokenKeyEntry);
+        token.TokenKeyModel ??= await ActiveTokens.FindAsync(token.TokenKey);
+        return await CheckToken(token.TokenKeyModel);
     }
     
     public async Task<bool> CheckToken(TokenKey? token)
