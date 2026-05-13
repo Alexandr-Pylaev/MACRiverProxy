@@ -16,7 +16,7 @@ public abstract class TokenProvider
     /// <returns>New token or <see cref="Empty"/></returns>
     public abstract Token CreateToken(params dynamic[]? args);
     /// <summary>
-    /// Verifies if token is valid for token provider
+    /// Verifies if token is valid for token provider.
     /// </summary>
     public abstract bool VerifyToken(Token token);
     /// <summary>
