@@ -1,12 +1,15 @@
-﻿namespace MACRiverProxy.Auth.Tokens;
+﻿using MACRiverProxy.Auth.Tokens;
+
+namespace MACRiverProxy.Auth.Null;
 
 /// <summary>
-/// Fallback provider for token. Always returns false.
+/// Token provider, that used when token is empty.
+/// Always return false when verifying token.
 /// </summary>
 public class NullTokenProvider : TokenProvider
 {
-    // ReSharper disable once StaticMemberInitializerReferesToMemberBelow
     public static NullTokenProvider Singleton = new ();
+    /// <remarks>Same as <see cref="TokenProvider.Empty"/>, but creates as a new token</remarks>
     public override Token CreateToken(params dynamic[]? args) => new Token(this.TokenProviderName, "");
 
     public override bool VerifyToken(Token token)
