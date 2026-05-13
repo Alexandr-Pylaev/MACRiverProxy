@@ -4,10 +4,18 @@ using System.Text.Json.Serialization;
 using MACRiverProxy.Auth.MAC;
 
 namespace MACRiverProxy.Auth.Tokens;
-
+/// <summary>
+/// Object, that used for authenticating and authorizing user.
+/// </summary>
+/// <param name="authMethod">Token auth method</param>
+/// <param name="userIdentifier">Identifier, that can help identify
+/// user for administrator</param>
 public sealed class Token(string authMethod, string userIdentifier) : IMACTag
 {
-    public string Id { get; set; }
+    /// <summary>
+    /// ID of Token Key
+    /// </summary>
+    public string TokenKey { get; set; }
     public DateTime ExpireTime { get; private set; }
     public byte MACLevel { get; set; }
     public ulong MACCategory { get; set; }
@@ -20,13 +28,21 @@ public sealed class Token(string authMethod, string userIdentifier) : IMACTag
     public string UserIdentifier { get; set; } = userIdentifier;
 
     [JsonIgnore]
-    public TokenKey? TokenKey
+    public TokenKey? TokenKeyEntry
     {
-        get => _tokenKey;
+        get
+        {
+            if (_tokenKey?.Key != TokenKey)
+            {
+                _tokenKey = null;
+                return null;
+            }
+            return _tokenKey;
+        }
         set
         {
             if (value is null) return;
-            Id = value.Key;
+            TokenKey = value.Key;
             ExpireTime = value.ExpireTime;
             UserIdentifier = value.UserIdentifier;
             _tokenKey = value;

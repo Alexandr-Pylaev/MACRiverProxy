@@ -23,19 +23,19 @@ public static class RouteStatic
         
         if (!(await token.VerifyToken(tokenStorageServ, tokenProvider)))
         {
-            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed to verify.");
+            Log.Information($"Token [{token.TokenKeyId}:{token.UserIdentifier}] failed to verify.");
             return false;
         }
 
         if (!token.HaveLevel(macLevel))
         {
-            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC level check ({token.MACLevel} < {macLevel}).");
+            Log.Information($"Token [{token.TokenKeyId}:{token.UserIdentifier}] failed MAC level check ({token.MACLevel} < {macLevel}).");
             return false;
         }
 
         if (!token.HaveCategories(macCategory))
         {
-            Log.Information($"Token [{token.Id}:{token.UserIdentifier}] failed MAC category check ({token.MACCategory} does not have {macCategory}).");
+            Log.Information($"Token [{token.TokenKeyId}:{token.UserIdentifier}] failed MAC category check ({token.MACCategory} does not have {macCategory}).");
             return false;
         }
 
