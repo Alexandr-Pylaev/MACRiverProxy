@@ -345,7 +345,7 @@ internal class Program
         tokenRevokeAllCmd.SetAction(cmdResult =>
         {
             Log.Information("{RemovedTokenCount} token key(s) was removed.", 
-                tokenStorage.RevokeTokens(cmdResult.GetRequiredValue(userIdentifierArg)));
+                tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)));
         });
         
         tokenRevokeAllCmd.SetAction(async _ =>
@@ -394,7 +394,7 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokens(user.Login);
+            await tokenStorage.RevokeTokenKeys(user.Login);
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
@@ -403,7 +403,7 @@ internal class Program
             LocalAuthUser user = users[0];
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokens(user.Login);
+            await tokenStorage.RevokeTokenKeys(user.Login);
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
