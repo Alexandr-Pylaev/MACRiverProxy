@@ -48,7 +48,7 @@ public static class MACAuthenticationStatic
     /// <param name="args">Args for auth</param>
     /// <returns>Is user sign in</returns>
     /// <exception cref="InvalidOperationException">Context does not have TokenStorage service.</exception>
-    public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params string?[]? args)
+    public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
     {
         var token = provider.CreateToken(args);
         var tokenStorage = context.RequestServices.GetService<TokenKeyStorage>();
