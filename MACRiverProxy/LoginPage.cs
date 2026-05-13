@@ -23,4 +23,8 @@ public static class LoginPage
 
     public static void SendLogin(this HttpResponse response,
         HttpStatusCode code = HttpStatusCode.TemporaryRedirect) => SendLoginAsync(response, code).Wait();
+    
+    public static void RedirectWithLoginError(this HttpResponse response, string error) {
+        response.Redirect($"/login?error={error.EscapeCharactersForUrl()}");
+    }
 }

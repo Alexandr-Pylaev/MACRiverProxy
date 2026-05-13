@@ -493,20 +493,27 @@ internal class Program
 
     private static async Task _LoginPost(HttpContext context)
     {
-        if (!context.Request.Form.TryGetValue("passwordInput", out var pass)
-            || !context.Request.Form.TryGetValue("loginInput", out var login)
-            || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(login))
+        if (!context.Request.Form.TryGetValue("authMethod", out var authMethod) || string.IsNullOrEmpty(authMethod))
         {
+            Log.Warning("Missing authMethod field in form. Skipping.");
             context.Response.Redirect("/");
             return;
         }
-        if (await context.SignIn(context.RequestServices.GetService<LocalAuthTokenProvider>()!, 
-                DateTime.Now.Add(TokenLifeSpan), login,pass))
+
+        var tokenProvider = context.RequestServices.GetTokenProvider(authMethod!);
+        if (tokenProvider is null)
+        {
+            Log.Warning("Missing token provider {authMethod}.", authMethod);
+            context.Response.RedirectWithLoginError("Failed to use selected auth method.");
+            return;
+        }
+        if (await context.SignIn(tokenProvider, DateTime.Now.Add(TokenLifeSpan)))
         {
             context.RedirectToUrl();
             return;
         }
-        context.Response.Redirect("/login?error=Failed%20to%20verify%20info%20you%20provided.");
+        Log.Information("Failed to verify provided login info.");
+        context.Response.RedirectWithLoginError("Failed to verify info you provided.");
     }
 
     private static async Task _Logout(HttpContext context)
