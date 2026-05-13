@@ -21,6 +21,4 @@ public class NullTokenProvider : TokenProvider
     {
         return true;
     }
-
-    public override Token CreateTokenFromForm(IFormCollection form) => CreateToken();
 }
