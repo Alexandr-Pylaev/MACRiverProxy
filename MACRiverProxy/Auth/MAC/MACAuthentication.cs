@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MACRiverProxy.Auth.MAC;
 
+// ReSharper disable once InconsistentNaming
 public static class MACAuthenticationStatic
 {
     public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
@@ -19,7 +20,7 @@ public static class MACAuthenticationStatic
         {
             return false;
         }
-        tokenStorage.RegisterToken(expires, token);
+        await tokenStorage.RegisterToken(expires, token);
         await context.SignInAsync(
             new ClaimsPrincipal(
                 new ClaimsIdentity([token.AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme)));
@@ -27,14 +28,13 @@ public static class MACAuthenticationStatic
     }
     public static async Task<bool> SignOut(this HttpContext context)
     {
-        bool successful = true;
         var token = context.GetUserToken();
         if (token is null) return false;
         var provider = context.RequestServices.GetTokenProvider(token);
         
-        successful = provider is null;
+        var successful = provider is null;
         
-        context.RequestServices.GetService<TokenKeyStorage>()!.RevokeToken(token);
+        await context.RequestServices.GetService<TokenKeyStorage>()!.RevokeToken(token);
         provider?.DestroyToken(token);
         await context.SignOutAsync();
         return successful;

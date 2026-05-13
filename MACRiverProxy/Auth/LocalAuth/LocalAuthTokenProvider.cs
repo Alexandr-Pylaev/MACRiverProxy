@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using MACRiverProxy.Auth.Tokens;
+﻿using MACRiverProxy.Auth.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -24,7 +22,7 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenKeyS
             MACCategory = findedUser.MACCategory,
             MACLevel = findedUser.MACLevel
         };
-        tokenStorage.RegisterToken(DateTime.Now.AddDays(1), token);
+        await tokenStorage.RegisterToken(DateTime.Now.AddDays(1), token);
         return token;
     }
 

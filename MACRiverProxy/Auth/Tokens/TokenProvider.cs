@@ -29,7 +29,7 @@ public static class TokenProviderStatic
 {
     public static TokenProvider CreateTokenProvider(this Token token, params object?[]? args)
     {
-        return Activator.CreateInstance(token.GetTokenProviderType(), args) as TokenProvider;
+        return (Activator.CreateInstance(token.GetTokenProviderType()!, args) as TokenProvider)!;
     }
 
     public static Type? GetTokenProviderType(this Token token)
@@ -58,7 +58,7 @@ public static class TokenProviderStatic
     
     public static TokenProvider? GetTokenProvider(this IServiceProvider sp, Token token)
     {
-        var tokenProviderType = token?.GetTokenProviderType();
+        var tokenProviderType = token.GetTokenProviderType();
         if (tokenProviderType is null) return null;
         return (TokenProvider?) sp.GetService(tokenProviderType);
     }

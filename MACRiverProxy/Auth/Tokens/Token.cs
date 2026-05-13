@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MACRiverProxy.Auth.MAC;
-using Serilog;
 
 namespace MACRiverProxy.Auth.Tokens;
 
@@ -62,7 +61,7 @@ public static class TokenStatic
                     AllowOutOfOrderMetadataProperties = true
                 })!;
         }
-        catch (JsonException _)
+        catch (JsonException)
         {
             return NullTokenProvider.Singleton.CreateToken();
         }
