@@ -5,7 +5,7 @@ using MACRiverProxy.Auth.MAC;
 
 namespace MACRiverProxy.Auth.Tokens;
 
-public sealed class Token(string authMethod, string userIdentifier) : IMAC
+public sealed class Token(string authMethod, string userIdentifier) : IMACTag
 {
     public string Id { get; set; }
     public DateTime ExpireTime { get; private set; }

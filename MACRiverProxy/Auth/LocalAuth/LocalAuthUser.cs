@@ -3,7 +3,7 @@ using MACRiverProxy.Auth.MAC;
 
 namespace MACRiverProxy.Auth.LocalAuth;
 
-public class LocalAuthUser : IMAC
+public class LocalAuthUser : IMACTag
 {
     private const string PASSWORD_PEPPER = "f9gfbnd98";
     public static readonly int MAX_PASSWORD_LENGTH = 72 - (PASSWORD_PEPPER.Length);
