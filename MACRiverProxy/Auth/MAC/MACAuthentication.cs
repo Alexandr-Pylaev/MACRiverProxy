@@ -23,6 +23,19 @@ public static class MACAuthenticationStatic
     public static async Task<bool> SignIn(this HttpContext context, FormTokenProvider provider, DateTime expires)
     {
         var token = provider.CreateTokenFromForm(context.Request.Form);
+        return await SignIn(context, expires, token);
+    }
+
+    /// <summary>
+    /// Sign in user
+    /// </summary>
+    /// <param name="context">Request context</param>
+    /// <param name="token">Token</param>
+    /// <param name="expires">Expiration date</param>
+    /// <returns>Is user sign in</returns>
+    /// <exception cref="InvalidOperationException">Context does not have TokenStorage service.</exception>
+    public static async Task<bool> SignIn(this HttpContext context, DateTime expires, Token token)
+    {
         var tokenStorage = context.RequestServices.GetService<TokenKeyStorage>();
         if (tokenStorage is null)
         {
@@ -51,20 +64,7 @@ public static class MACAuthenticationStatic
     public static async Task<bool> SignIn(this HttpContext context, TokenProvider provider, DateTime expires, params dynamic[]? args)
     {
         var token = provider.CreateToken(args);
-        var tokenStorage = context.RequestServices.GetService<TokenKeyStorage>();
-        if (tokenStorage is null)
-        {
-            throw new InvalidOperationException("Context does not have TokenStorage service.");
-        }
-        if (token == TokenProvider.Empty)
-        {
-            return false;
-        }
-        await tokenStorage.RegisterToken(expires, token);
-        await context.SignInAsync(
-            new ClaimsPrincipal(
-                new ClaimsIdentity([token.AsClaim()], CookieAuthenticationDefaults.AuthenticationScheme)));
-        return true;
+        return await SignIn(context, expires, token);
     }
     /// <summary>
     /// Sign out user
