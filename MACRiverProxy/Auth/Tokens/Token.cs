@@ -71,7 +71,7 @@ public static class TokenStatic
     {
         try
         {
-            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(NullTokenProvider.Singleton.CreateToken()),
+            return JsonSerializer.Deserialize<Token>(claim?.Value ?? JsonSerializer.Serialize(TokenProvider.Empty),
                 new JsonSerializerOptions()
                 {
                     AllowOutOfOrderMetadataProperties = true
@@ -79,7 +79,7 @@ public static class TokenStatic
         }
         catch (JsonException)
         {
-            return NullTokenProvider.Singleton.CreateToken();
+            return TokenProvider.Empty;
         }
     }
     
