@@ -6,6 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <LangVersion>13</LangVersion>
+        <Version>2.0</Version>
+        <AssemblyVersion>2.0</AssemblyVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,10 +22,13 @@
       <Content Include="Pages\Login.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Remove="db\**" />
+      <None Remove="db\**" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+      <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.15" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.14">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -35,13 +40,24 @@
       </PackageReference>
       <PackageReference Include="Serilog" Version="4.3.1-dev-02404" />
       <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+      <PackageReference Include="Serilog.Enrichers.ClientInfo" Version="2.9.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+      <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+      <PackageReference Include="System.CommandLine" Version="2.0.7" />
       <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
     </ItemGroup>
     
     <ItemGroup>
         <Content CopyToOutputDirectory="Always" Update="Pages" />
         <Content CopyToOutputDirectory="Always" Update="Static" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Remove="db\**" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <EmbeddedResource Remove="db\**" />
     </ItemGroup>
 
 

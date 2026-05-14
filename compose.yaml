@@ -12,7 +12,7 @@
       - "443:443" # Works only with ENABLE_HTTPS in .env
     volumes: 
       - "./appsettings.json:/app/appsettings.json"
-      - "RiverProxyDBs:/app/db/"
+      - "./db/:/app/db/"
       - "./pages/:/app/Pages/:ro"
       - "./certs/:/certs/:ro"
       - "./logs/:/app/logs/"
