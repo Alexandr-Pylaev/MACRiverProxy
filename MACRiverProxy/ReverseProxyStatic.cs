@@ -15,7 +15,7 @@ public static class ReverseProxyStatic
 
         return "/";
     }
-    public static void RedirectToUrl(this HttpContext context)
+    public static void RedirectToRedirectUrl(this HttpContext context)
     {
         context.Response.Redirect(context.Request.GetRedirectUrl());
     }
