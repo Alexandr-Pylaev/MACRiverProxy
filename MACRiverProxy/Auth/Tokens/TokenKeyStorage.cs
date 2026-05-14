@@ -13,7 +13,7 @@ public class TokenKeyStorage : DbContext
     /// </summary>
     protected DbSet<TokenKey> ActiveTokenKeys { get; set; }
     /// <summary>
-    /// Path to database file
+    /// Path to SQLite database file
     /// </summary>
     private string DbPath { get; } = Path.Combine(Directory.GetCurrentDirectory(), "db/tokenstorage.db"); // Database is always in same folder
     protected override void OnConfiguring(DbContextOptionsBuilder options)
