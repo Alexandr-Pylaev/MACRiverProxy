@@ -29,9 +29,6 @@ internal class Program
             .Enrich.WithCorrelationId()
             .CreateLogger();
         AppDomain.CurrentDomain.ProcessExit += (_, _) => { Log.CloseAndFlush(); };
-        bool bootServer = ExecuteCmd(args);
-        if (!bootServer) return;
-        try
         try // Fix for "SQLite Error 14: 'unable to open database file'." when folder does not exist
         {
             Directory.CreateDirectory("./db");
@@ -42,6 +39,13 @@ internal class Program
             Log.Error("Failed to create folder for databases: {exMsg}", ex.Message);
             return;
         }
+        #region CLI-tool
+
+        bool bootServer = ExecuteCmd(args); // Execute commands before booting proxy
+        if (!bootServer) return; 
+
+        #endregion
+        
         var builder = WebApplication.CreateBuilder(args);
 
         #region Builder app setup
