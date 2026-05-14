@@ -16,12 +16,28 @@ public static class RouteStatic
         var tokenProvider = sp.GetTokenProvider(token);
         if (tokenProvider is null) return false;
         
-        if (configServ.GetRouteConfigValue<string?>(routeId, "AuthorizationPolicy")?.ToLower() != Restricted) return true;
-        
-        var macLevel = configServ.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MaxValue;
-        var macCategory = configServ.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MaxValue;
-        
-        if (!(await token.VerifyToken(tokenStorageServ, tokenProvider)))
+        return await AuthorizeTokenForRoute(token, routeId, configServ, tokenStorageServ, tokenProvider);
+    }
+    public static async Task<bool> AuthorizeTokenForRoute(Token token, string routeId, IConfiguration config, TokenKeyStorage tokenStorage,
+        TokenProvider tokenProvider)
+    {
+        byte macLevel;
+        ulong macCategory;
+        try
+        {
+            if (config.GetRouteConfigValue<string?>(routeId, "AuthorizationPolicy")?.ToLower() != Restricted)
+                return true;
+
+            macLevel = config.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MaxValue;
+            macCategory = config.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MaxValue;
+        }
+        catch (InvalidCastException ex)
+        {
+            Log.Error("Failed to read config: {exMessage}", ex.Message);
+            return false;
+        }
+
+        if (!(await token.VerifyToken(tokenStorage, tokenProvider)))
         {
             Log.Information($"Token [{token.TokenKey}:{token.UserIdentifier}] failed to verify.");
             return false;
