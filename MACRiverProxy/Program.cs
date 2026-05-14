@@ -32,6 +32,7 @@ internal class Program
         bool bootServer = ExecuteCmd(args);
         if (!bootServer) return;
         try
+        try // Fix for "SQLite Error 14: 'unable to open database file'." when folder does not exist
         {
             Directory.CreateDirectory("./db");
         }
