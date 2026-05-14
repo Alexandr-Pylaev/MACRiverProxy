@@ -39,7 +39,7 @@ internal class Program
         catch (Exception ex) when(ex is IOException or UnauthorizedAccessException 
                                       or PathTooLongException or DirectoryNotFoundException)
         {
-            Log.Error($"Failed to create folder for databases: {ex.Message}");
+            Log.Error("Failed to create folder for databases: {exMsg}", ex.Message);
             return;
         }
         var builder = WebApplication.CreateBuilder(args);
@@ -375,8 +375,8 @@ internal class Program
             {
                 var pass = AuthStatic.GenerateRandomPassword(24);
                 localAuthStorage.RegisterUser(login, pass).Wait();
-                Log.Information($"Added user {login} with password [:::SECRET:::]");
-                sensitiveLogger.Information($"Password for user {login}: {pass}");
+                Log.Information("Added user {login} with password [:::SECRET:::]", login);
+                sensitiveLogger.Information("Password for user {login}: {pass}", login, pass);
             }
             Log.Information("Done.");
         });
@@ -385,7 +385,7 @@ internal class Program
             foreach (LocalAuthUser user in users)
             {
                 localAuthStorage.DeleteUser(user).Wait();
-                Log.Information($"User {user.Login} deleted.");
+                Log.Information("User {login} deleted.", user.Login);
             }
             Log.Information("Done.");
         });
@@ -439,7 +439,7 @@ internal class Program
                     return;
                 }
                 localAuthStorage.ChangePassword(user, pass).Wait();
-                Log.Information($"Password changed for user {user.Login}");
+                Log.Information("Password changed for user {login}", user.Login);
             }
             catch (AggregateException ex)
             {
@@ -529,7 +529,7 @@ internal class Program
         if (string.IsNullOrEmpty(tokenAuthMethod)) return;
         if (await context.SignOut())
         {
-            Log.Warning($"Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.");
+            Log.Warning("Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.", tokenAuthMethod);
         }
         context.RedirectToUrl();
     }
@@ -547,8 +547,7 @@ internal class Program
     }
     
     private static async Task<bool> AuthorizeTokenForContext(HttpContext context) =>
-        await context.GetUserToken().AuthorizeTokenForRoute(context.RequestServices, 
-            context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!);
+        await context.GetUserToken().AuthorizeTokenForRoute(context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!, context.RequestServices);
 
     public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
 }

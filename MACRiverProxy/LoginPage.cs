@@ -7,7 +7,7 @@ public static class LoginPage
 {
     public static async Task SendLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
-        Log.Information($"Sending client to login page with {code} code");
+        Log.Information("Sending client to login page with {code} code",code);
         try
         {
             await response.SendStoredPageAsync("./Pages/Login.html");
