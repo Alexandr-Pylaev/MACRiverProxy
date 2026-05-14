@@ -32,11 +32,14 @@ public static class ReverseProxyStatic
             string header, msg;
             switch (errorFeature.Error)
             {
-                case ForwarderError.NoAvailableDestinations:
                 case ForwarderError.RequestTimedOut:
                 case ForwarderError.Request:
                     header = "Target resource is not responding.";
                     msg = "Resource you trying to access is not responding.";
+                    break;
+                case ForwarderError.NoAvailableDestinations: 
+                    header = "Resource is not available.";
+                    msg = "Resource you trying to access is not available.";
                     break;
                 default:
                     header = "Failed to connect to target resource.";
