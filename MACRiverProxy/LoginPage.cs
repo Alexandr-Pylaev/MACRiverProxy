@@ -15,17 +15,7 @@ public static class LoginPage
     public static async Task SendLoginAsync(this HttpResponse response, HttpStatusCode code = HttpStatusCode.TemporaryRedirect)
     {
         Log.Information("Sending client to login page with {code} code",code);
-        try
-        {
-            await response.SendStoredPageAsync("./Pages/Login.html");
-        }
-        catch (Exception e)
-        { // TODO: Logging error and throwing?
-            Log.Error($"Unexpected error when sending a page.");
-            Log.Error(e.ToString());
-            response.StatusCode = StatusCodes.Status500InternalServerError;
-            throw;
-        }
+        await response.SendStoredPageAsync("./Pages/Login.html");
     }
     /// <inheritdoc cref="SendLoginAsync(HttpResponse, HttpStatusCode)"/>
     public static void SendLogin(this HttpResponse response,
