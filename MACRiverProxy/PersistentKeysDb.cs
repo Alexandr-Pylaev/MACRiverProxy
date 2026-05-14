@@ -23,10 +23,9 @@ public static class PersistentKeysDbStatic
         return servCollection;
     }
 
-    public static WebApplication UsePersistentKeysDb(this WebApplication servProvider)
+    public static WebApplication UsePersistentKeysDb(this WebApplication app)
     {
-        using var scope = servProvider.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
         scope.ServiceProvider.GetService<PersistentKeysDb>()!.Database.Migrate();
-        return servProvider;
     }
 }
