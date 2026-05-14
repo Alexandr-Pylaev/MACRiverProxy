@@ -54,7 +54,7 @@ public static class ErrorPage
         catch (FileNotFoundException e)
         {
             Log.Error("Error page was not found. {eMessage}", e.Message);
-            if (Program.IsAppDevelopment()) Log.Error(e.ToString());
+            Log.Verbose(e.ToString());
             return false;
         }
         catch (Exception e)

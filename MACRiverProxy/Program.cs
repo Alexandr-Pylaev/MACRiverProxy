@@ -500,7 +500,7 @@ internal class Program
         catch (FileNotFoundException e)
         { 
             Log.Error("Login page was not found. {eMsg}", e.Message);
-            if (Program.IsAppDevelopment()) Log.Error(e.ToString());
+            Log.Verbose(e.ToString());
         }
         catch (Exception ex)
         {
@@ -564,6 +564,4 @@ internal class Program
     
     private static async Task<bool> AuthorizeTokenForContext(HttpContext context) =>
         await context.GetUserToken().AuthorizeTokenForRoute(context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!, context.RequestServices);
-
-    public static bool IsAppDevelopment () => app.Environment.IsDevelopment();
 }
