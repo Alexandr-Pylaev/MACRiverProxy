@@ -64,18 +64,18 @@ public class TokenKeyStorage : DbContext
     /// Revokes token's key
     /// </summary>
     /// <param name="token">Token to revoke</param>
-    public async Task RevokeToken(Token token) => await RevokeToken([token]);
+    public async Task RevokeToken(Token token) => await RevokeTokens([token]);
     /// <summary>
     /// Revokes token key
     /// </summary>
     /// <param name="token">Token key to revoke</param>
-    public async Task RevokeToken(TokenKey token) => await RevokeToken([token]);
+    public async Task RevokeTokenKey(TokenKey token) => await RevokeTokenKeys([token]);
     
     /// <summary>
     /// Revoke token keys
     /// </summary>
     /// <param name="tokens">Token keys to revoke</param>
-    public async Task RevokeToken(params TokenKey[] tokens)
+    public async Task RevokeTokenKeys(params TokenKey[] tokens)
     {
         foreach (var token in tokens)
         { 
@@ -104,7 +104,7 @@ public class TokenKeyStorage : DbContext
     /// </summary>
     /// <param name="tokens">Tokens to revoke</param>
 
-    public async Task RevokeToken(params Token[] tokens) => await RevokeToken(tokens.Where(x => x.TokenKeyModel is not null).Select(x => x.TokenKeyModel!).ToArray());
+    public async Task RevokeTokens(params Token[] tokens) => await RevokeTokenKeys(tokens.Where(x => x.TokenKeyModel is not null).Select(x => x.TokenKeyModel!).ToArray());
 
     /// <summary>
     /// Verifies token key of token
@@ -136,7 +136,7 @@ public class TokenKeyStorage : DbContext
             {
                 if (!CheckToken(token).Result)invalidTokens.Add(token);
             }
-            RevokeToken(invalidTokens.ToArray()).Wait();
+            RevokeTokenKeys(invalidTokens.ToArray()).Wait();
         }
     }
 }
