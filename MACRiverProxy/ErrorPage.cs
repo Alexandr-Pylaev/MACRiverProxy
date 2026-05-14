@@ -13,21 +13,20 @@ public static class ErrorPage
         string errorCode = ERR_GENERIC)
     {
         if (errorCode == ERR_GENERIC) Log.Error($"{ERR_GENERIC} was used. This error should be used only in development.");
-        Log.Information($"Throwing error to client: {errorCode}");
+        Log.Information("Throwing error to client: {errorCode}",errorCode);
         try
         {
             await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage, errorCode), code);
         }
         catch (FileNotFoundException e)
         {
-            Log.Error($"Error page was not found. {e.Message}");
+            Log.Error("Error page was not found. {eMessage}", e.Message);
             if (Program.IsAppDevelopment()) Log.Error(e.ToString());
             throw;
         }
         catch (Exception e)
         {
-            Log.Error("Unexpected error when sending a error.");
-            Log.Error(e.ToString());
+            Log.Error(e, "Unexpected error when sending a error.");
         }
     }
 

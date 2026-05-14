@@ -52,7 +52,7 @@ public static class ReverseProxyStatic
                 header,
                 msg,
                 $"ERR_{errorFeature.Error.ToString().ToUpper()}");
-            Log.Error(errorFeature.Exception, $"[{context.TraceIdentifier}] Failed to redirect request.");
+            Log.Error(errorFeature.Exception, "[{traceIdentifier}] Failed to redirect request.", context.TraceIdentifier);
         });
         return proxyOpt;
     }
