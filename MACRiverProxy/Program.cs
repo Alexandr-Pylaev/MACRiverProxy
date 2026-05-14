@@ -487,7 +487,7 @@ internal class Program
         if (token is not null && await token.VerifyToken(context.RequestServices.GetService<TokenKeyStorage>(),
                 context.RequestServices.GetTokenProvider(token)))
         {
-            context.RedirectToUrl();
+            context.RedirectToRedirectUrl();
         }
         await context.Response.SendLoginAsync();
     }
@@ -516,7 +516,7 @@ internal class Program
         }
         if (await context.SignIn((FormTokenProvider)tokenProvider, DateTime.Now.Add(TokenLifeSpan)))
         {
-            context.RedirectToUrl();
+            context.RedirectToRedirectUrl();
             return;
         }
         Log.Information("Failed to verify provided login info.");
@@ -531,7 +531,7 @@ internal class Program
         {
             Log.Warning("Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.", tokenAuthMethod);
         }
-        context.RedirectToUrl();
+        context.RedirectToRedirectUrl();
     }
     public static bool IsHttpsEnabled { get; private set; }
     private static bool _IsHttpsEnabled()
