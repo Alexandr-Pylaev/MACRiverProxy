@@ -64,10 +64,12 @@ public static class ReverseProxyStatic
                     break;
             }
             // Send user error page with proxying error
-            await context.SendErrorPageAsync(HttpStatusCode.BadGateway,
+            if (await context.TrySendErrorPageAsync(HttpStatusCode.BadGateway,
                 header,
                 msg,
-                $"ERR_{errorFeature.Error.ToString().ToUpper()}");
+                $"ERR_{errorFeature.Error.ToString().ToUpper()}")) {
+                Log.Error("Error page failed to send.");
+            }
             Log.Error(errorFeature.Exception, "[{traceIdentifier}] Failed to redirect request.", context.TraceIdentifier);
         });
         return proxyOpt;

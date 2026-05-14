@@ -475,10 +475,13 @@ internal class Program
         // Prevent redirection when access is denied
         redirContext.Response.StatusCode = StatusCodes.Status403Forbidden;
         var returnUrl = redirContext.HttpContext.Request.GetRedirectUrl();
-        await redirContext.HttpContext.SendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.", 
-            "Proxy failed to authorize you and forbidden access to this resource. \n" +
-            $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", 
-            "ERR_ACCESS_DENIED");
+        if (!await redirContext.HttpContext.TrySendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.",
+                "Proxy failed to authorize you and forbidden access to this resource. \n" +
+                $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n",
+                "ERR_ACCESS_DENIED"))
+        {
+            Log.Error("Error page failed to send.");
+        }
     }
 
     private static async Task _LoginPage(HttpContext context)
@@ -489,7 +492,20 @@ internal class Program
         {
             context.RedirectToRedirectUrl();
         }
-        await context.Response.SendLoginAsync();
+
+        try
+        {
+            await context.Response.SendLoginAsync();
+        }
+        catch (FileNotFoundException e)
+        { 
+            Log.Error("Login page was not found. {eMsg}", e.Message);
+            if (Program.IsAppDevelopment()) Log.Error(e.ToString());
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Unexpected error when sending a page.");
+        }
     }
 
     private static async Task _LoginPost(HttpContext context)

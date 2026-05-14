@@ -28,19 +28,39 @@ public static class ErrorPage
     {
         if (errorCode == ERR_GENERIC) Log.Error($"{ERR_GENERIC} was used. This error should be used only in development.");
         Log.Information("Throwing error to client: {errorCode}",errorCode);
+        await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage, errorCode), code);
+    }
+
+    /// <summary>
+    /// Sends error page
+    /// </summary>
+    /// <param name="context">HTTP context</param>
+    /// <param name="code">Status code</param>
+    /// <param name="errorHeader">Error title/header</param>
+    /// <param name="errorMessage">Error text</param>
+    /// <param name="errorCode">Error code for user</param>
+    /// <returns>Is page sent successfully</returns>
+    public static async Task<bool> TrySendErrorPageAsync(this HttpContext context, HttpStatusCode code = HttpStatusCode.InternalServerError, 
+        string errorHeader = "Some error happened", string errorMessage = "Proxy thrown an error.\n" +
+                                                                          "No additional information provided.\n\n" +
+                                                                          "Contact administrator for additional help.",
+        string errorCode = ERR_GENERIC)
+    {
         try
         {
-            await context.Response.SendPageAsync(await GenerateErrorPage(errorHeader, errorMessage, errorCode), code);
+            await SendErrorPageAsync(context, code, errorHeader, errorMessage, errorCode);
+            return true;
         }
         catch (FileNotFoundException e)
-        { // TODO: why throwing here?
+        {
             Log.Error("Error page was not found. {eMessage}", e.Message);
             if (Program.IsAppDevelopment()) Log.Error(e.ToString());
-            throw;
+            return false;
         }
         catch (Exception e)
-        { // TODO: but not here????
+        {
             Log.Error(e, "Unexpected error when sending a error.");
+            return false;
         }
     }
 
