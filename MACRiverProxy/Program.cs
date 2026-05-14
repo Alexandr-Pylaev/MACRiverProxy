@@ -138,7 +138,7 @@ internal class Program
 
         app.MapReverseProxy(options =>
         {
-            options.UseForwarderErrorDisplayMiddleware();
+            options.UseProxyingErrorDisplayMiddleware();
         });
         app.UseSerilogRequestLogging(serilogOpt =>
         {
