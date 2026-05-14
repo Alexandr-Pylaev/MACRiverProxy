@@ -14,8 +14,6 @@ using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Yarp.ReverseProxy.Model;
-
 namespace MACRiverProxy;
 
 internal class Program
@@ -555,7 +553,7 @@ internal class Program
     /// </summary>
     private static async Task _LoginPost(HttpContext context)
     {
-        // If Form does not contains auth method, throwing user to login page with error
+        // If Form does not contain auth method, throwing user to login page with error
         if (!context.Request.Form.TryGetValue("authMethod", out var authMethod) || string.IsNullOrEmpty(authMethod))
         {
             Log.Warning("Missing authMethod field in form. Skipping.");
