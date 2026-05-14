@@ -6,6 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <LangVersion>13</LangVersion>
+        <Version>2.0</Version>
+        <AssemblyVersion>2.0</AssemblyVersion>
     </PropertyGroup>
 
     <ItemGroup>
