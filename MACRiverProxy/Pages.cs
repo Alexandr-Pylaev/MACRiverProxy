@@ -14,7 +14,7 @@ public static class Pages
         }
         catch (FileNotFoundException e)
         {
-            Log.Error("Login page was not found. {eMsg}", e.Message);
+            Log.Error("Page was not found. {eMsg}", e.Message);
             if (Program.IsAppDevelopment()) Log.Error(e.ToString());
             throw;
         }
