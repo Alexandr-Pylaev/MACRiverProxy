@@ -6,9 +6,9 @@ namespace MACRiverProxy;
 
 public static class ReverseProxyStatic
 {
-    public static string GetRedirectUrl(this HttpContext context)
+    public static string GetRedirectUrl(this HttpRequest request)
     {
-        if (context.Request.Query.TryGetValue("ReturnURL", out var returnUrl))
+        if (request.Query.TryGetValue("ReturnURL", out var returnUrl))
         {
             return returnUrl!;
         }
@@ -17,7 +17,7 @@ public static class ReverseProxyStatic
     }
     public static void RedirectToUrl(this HttpContext context)
     {
-        context.Response.Redirect(context.GetRedirectUrl());
+        context.Response.Redirect(context.Request.GetRedirectUrl());
     }
     
     public static IReverseProxyApplicationBuilder UseForwarderErrorDisplayMiddleware(this IReverseProxyApplicationBuilder proxyOpt)

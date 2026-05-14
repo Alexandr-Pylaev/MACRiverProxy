@@ -474,7 +474,7 @@ internal class Program
     {
         // Prevent redirection when access is denied
         redirContext.Response.StatusCode = StatusCodes.Status403Forbidden;
-        var returnUrl = redirContext.HttpContext.GetRedirectUrl();
+        var returnUrl = redirContext.HttpContext.Request.GetRedirectUrl();
         await redirContext.HttpContext.SendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.", 
             "Proxy failed to authorize you and forbidden access to this resource. \n" +
             $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n", 
