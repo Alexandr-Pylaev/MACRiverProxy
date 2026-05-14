@@ -1,6 +1,8 @@
 ﻿using System.Net;
+using MACRiverProxy.Auth.Tokens;
 using Serilog;
 using Yarp.ReverseProxy.Forwarder;
+using Yarp.ReverseProxy.Model;
 
 namespace MACRiverProxy;
 /// <summary>
@@ -83,4 +85,7 @@ public static class ReverseProxyStatic
     {
         return text.Replace(" ", "%20");
     }
+    
+    public static async Task<bool> AuthorizeTokenForContext(this HttpContext context) =>
+        await context.GetUserToken().AuthorizeTokenForRoute(context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!, context.RequestServices);
 }

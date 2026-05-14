@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using MACRiverProxy.Auth;
 using MACRiverProxy.Auth.LocalAuth;
 using MACRiverProxy.Auth.MAC;
@@ -23,11 +24,13 @@ internal class Program
     public static TimeSpan TokenLifeSpan;
     public static void Main(string[] args)
     {
+        #region Pre-builder setup
         Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
             .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
             .Enrich.WithCorrelationId()
             .CreateLogger();
+        // Close logger on process exit
         AppDomain.CurrentDomain.ProcessExit += (_, _) => { Log.CloseAndFlush(); };
         try // Fix for "SQLite Error 14: 'unable to open database file'." when folder does not exist
         {
@@ -36,12 +39,15 @@ internal class Program
         catch (Exception ex) when(ex is IOException or UnauthorizedAccessException 
                                       or PathTooLongException or DirectoryNotFoundException)
         {
+            // Exit app because it'll crash anyway
             Log.Error("Failed to create folder for databases: {exMsg}", ex.Message);
             return;
         }
+        #endregion
+
         #region CLI-tool
 
-        bool bootServer = ExecuteCmd(args); // Execute commands before booting proxy
+        bool bootServer = _ExecuteCmd(args); // Execute commands before booting proxy
         if (!bootServer) return; 
 
         #endregion
@@ -53,17 +59,20 @@ internal class Program
         builder.Services.AddSerilog();
         builder.Services.AddPersistentKeysDb();
         builder.Services.AddDataProtection()
-            .PersistKeysToDbContext<PersistentKeysDb>().UseCryptographicAlgorithms(
-                new AuthenticatedEncryptorConfiguration
+            .PersistKeysToDbContext<PersistentKeysDb>().UseCryptographicAlgorithms( // Enable encryption
+                new AuthenticatedEncryptorConfiguration              // that is disabled for some reason
                 {
                     EncryptionAlgorithm = EncryptionAlgorithm.AES_256_CBC,
                     ValidationAlgorithm = ValidationAlgorithm.HMACSHA512
                 });
+        // Configuring defaults for HTTPS
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
+            // Setting default certificate to /certs/cert(key).pem
             kestOpt.ConfigureHttpsDefaults(httpsOpt =>
             {
-                httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable("HTTPS_PEM_PASS") is null ? 
+                // If pem password set, use that
+                httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME) is null ? 
                     X509Certificate2
                         .CreateFromPemFile(
                             "/certs/cert.pem",
@@ -71,24 +80,25 @@ internal class Program
                     X509Certificate2
                         .CreateFromEncryptedPemFile(
                             "/certs/cert.pem",
-                            Environment.GetEnvironmentVariable("HTTPS_PEM_PASS"),
+                            Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME),
                             "/certs/key.pem");
             });
         });
 
         #endregion
-        #region Builder mac proxy setup
         
-        TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>("MACRiver:TokenLifeSpanMinutes") ?? 30);
-        builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-        builder.Services.AddHttpContextAccessor();
+        #region Builder mac proxy setup
+        //Default is 30 minutes
+        TokenLifeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<int?>(TOKEN_LIFE_SPAN_MINUTES_CONFIG_NAME) ?? 30);
+        builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection(REVERSE_PROXY_CONFIG_NAME));
+        builder.Services.AddHttpContextAccessor(); // Creates service for finding HTTP context in authorization
         builder.Services.AddDbContext<TokenKeyStorage>();
-        builder.Services.AddLocalAuthTokenProvider();
+        builder.Services.AddLocalAuthTokenProvider(); // Adds Local auth
         
         #endregion
         
         #region Builder auth setup
-
+        //Default cookie auth signs and encrypts data
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
@@ -103,16 +113,20 @@ internal class Program
 
         builder.Services.AddAuthorization((options, sp) =>
         {
+            // None is for disabled auth
             options.AddPolicy("none", policyBuilder =>
             {
                 policyBuilder.Requirements.Add(new AssertionRequirement(_ => true));
             });
+            // Restricted is MAC auth
             options.AddPolicy(RouteStatic.Restricted, policyBuilder =>
             {
                 policyBuilder.RequireAssertion(async _ =>
                 {
+                    // Gets HTTP context
                     var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext!;
-                    var result = await AuthorizeTokenForContext(httpContext);
+                    // and uses it for authorizing token
+                    var result = await httpContext.AuthorizeTokenForContext();
                     var token = httpContext.GetUserToken();
                     Log.Information("[{HttpContextTraceIdentifier}{UserIdentifier}]: Token assertion result: {Result}", 
                         httpContext.TraceIdentifier, (token is null ? "" : $":{token.TokenKey}:{token.UserIdentifier}"), result);
@@ -127,28 +141,29 @@ internal class Program
 
         #region App auth setup
 
-        app.UsePersistentKeysDb();
-        app.MapStaticAssets().ShortCircuit();
-        app.UseLocalAuthTokenProvider();
+        app.UsePersistentKeysDb(); // Migrates PersistentKeysDb
+        app.MapStaticAssets().ShortCircuit(); // Enable static files without auth
+        app.UseLocalAuthTokenProvider(); // Enable Local auth
         app.UseAuthentication();
         app.UseAuthorization();
 
         #endregion
 
-        #region Login pages
+        #region Registering login/logout pages
         
         app.MapGet("/login", _LoginPage);
         app.MapPost("/login", _LoginPost);
-        app.MapGet("/logout", _Logout);
+        app.Map("/logout", _Logout);
         
         #endregion
 
         #region App setup
-
+        // Enables error logging middleware
         app.MapReverseProxy(options =>
         {
             options.UseProxyingErrorDisplayMiddleware();
         });
+        // Adds MAC proxy additional info to logs
         app.UseSerilogRequestLogging(serilogOpt =>
         {
             serilogOpt.MessageTemplate = "[{TraceIdentifier}{TokenInfo}] " + serilogOpt.MessageTemplate;
@@ -159,9 +174,9 @@ internal class Program
                 diagnosticContext.Set("TokenInfo", token is null ? "" : $":{token.UserIdentifier}");
             };
         });
-        app.Start();
+        app.Start(); // Starts app, but does not lock it
         IsHttpsEnabled = _IsHttpsEnabled();
-        if (IsHttpsEnabled)
+        if (IsHttpsEnabled) // Warns admin that proxy is not using HTTPS
         {
             Log.Error("=========================================");
             Log.Error("HTTPS is not enabled on this proxy.");
@@ -171,13 +186,32 @@ internal class Program
         }
 
         #endregion
-
+        // Locking main thread so app does not close
         while (!app.Lifetime.ApplicationStopping.IsCancellationRequested) { }
     }
 
-    private static bool ExecuteCmd(string[] args)
+    /// <summary>
+    /// Name for Reverse proxy config section
+    /// </summary>
+    private const string REVERSE_PROXY_CONFIG_NAME ="MACRiver";
+    /// <summary>
+    /// Name for token life span number in minutes in config
+    /// </summary>
+    private const string TOKEN_LIFE_SPAN_MINUTES_CONFIG_NAME = $"{REVERSE_PROXY_CONFIG_NAME}:TokenLifeSpanMinutes";
+    /// <summary>
+    /// Env name for PEM password
+    /// </summary>
+    private const string HTTPS_PEM_PASS_ENV_NAME = "HTTPS_PEM_PASS";
+
+    /// <summary>
+    /// Executes CLI tool
+    /// </summary>
+    /// <param name="args">CMD args</param>
+    /// <returns>Should server boot</returns>
+    private static bool _ExecuteCmd(string[] args)
     {
         bool bootServer = false;
+        #region Command objects
         RootCommand rootCmd = new RootCommand( "MAC River proxy server and CLI tool.\nNo command is same as boot.")
         {
             TreatUnmatchedTokensAsErrors = false
@@ -191,13 +225,16 @@ internal class Program
         Command userDeleteCmd = new Command("del", "Deletes user by login");
         Command userSetCmd = new Command("set", "Sets user's settings");
         Command userSetPasswordCmd = new Command("password", "Sets user's password");
-        // ReSharper disable InconsistentNaming
+        // ReSharper disable InconsistentNaming Disable warnings for MAC word
         Command userSetMACCmd = new Command("mac", "Sets user's mandatory access control tag " +
                                                    
                                                    "(be aware, that old tokens will still have old MAC tag)");
         Command userSetMACLevelCmd = new Command("level", "Sets user's mandatory access control level");
         Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category");
         // ReSharper restore InconsistentNaming
+        #endregion
+
+        #region Argument objects
         Argument<string[]> loginsArg = new Argument<string[]>("logins")
         {
             Arity = ArgumentArity.OneOrMore,
@@ -227,7 +264,9 @@ internal class Program
             Description = "Mandatory access control category (ulong bitmask)",
             DefaultValueFactory = _ => null
         };
-        
+        #endregion
+
+        #region Registering commands
         rootCmd.Add(userCmd);
         rootCmd.Add(bootCmd);
         rootCmd.Add(tokenCmd);
@@ -235,16 +274,18 @@ internal class Program
         tokenCmd.Add(tokenRevokeCmd);
         tokenCmd.Add(tokenRevokeAllCmd);
         
-        userCmd.Subcommands.Add(userAddCmd);
-        userCmd.Subcommands.Add(userDeleteCmd);
-        userCmd.Subcommands.Add(userSetCmd);
+        userCmd.Add(userAddCmd);
+        userCmd.Add(userDeleteCmd);
+        userCmd.Add(userSetCmd);
         
-        userSetCmd.Subcommands.Add(userSetPasswordCmd);
-        userSetCmd.Subcommands.Add(userSetMACCmd);
+        userSetCmd.Add(userSetPasswordCmd);
+        userSetCmd.Add(userSetMACCmd);
         
-        userSetMACCmd.Subcommands.Add(userSetMACLevelCmd);
-        userSetMACCmd.Subcommands.Add(userSetMACCategoryCmd);
+        userSetMACCmd.Add(userSetMACLevelCmd);
+        userSetMACCmd.Add(userSetMACCategoryCmd);
+        #endregion
         
+        #region Registering arguments for commands
         userAddCmd.Add(loginsArg);
         userDeleteCmd.Add(loginsArg);
         userSetPasswordCmd.Add(loginArg);
@@ -253,29 +294,26 @@ internal class Program
         
         userSetMACLevelCmd.Add(macLevelArg);
         userSetMACCategoryCmd.Add(macCategoryArg);
+        #endregion
         
-        Action<ParseResult> bootServerAction = _ =>
-        {
-            bootServer = true;
-        };
-        
-        string[] logins = [];
-        List<LocalAuthUser> users = new();
+        string[]? logins = []; // Stores logins after validators
+        List<LocalAuthUser> users = new(); // Stores users after validation
         TokenKeyStorage tokenStorage = new TokenKeyStorage();
         LocalAuthStorage localAuthStorage = new LocalAuthStorage();
-        localAuthStorage.Database.Migrate();
+        byte? level = 0; // Stores MAC level after validation
+        ulong? category = 0; // Stores MAC category after validation
         
+        // Migrating dbs just to be sure
+        tokenStorage.Database.Migrate();
+        localAuthStorage.Database.Migrate(); 
+        
+        #region Validators
+        // GetRequiredValue raises InvalidOperationException on no value or invalid value
+        // GetValue raises InvalidOperationException on invalid input
         userAddCmd.Validators.Add((parseResult) =>
         {
-            try
-            {
-                logins = parseResult.GetRequiredValue(loginsArg);
-            }
-            catch (InvalidOperationException)
-            {
-                parseResult.AddError("Login was not provided.");
-                return;
-            }
+            logins = GetLogins(parseResult);
+            if (logins is null) return;
             foreach (string login in logins)
             {
                 if (localAuthStorage.IsUserRegistered(login).Result)
@@ -284,18 +322,10 @@ internal class Program
                 }
             }
         });
-        
         Action<CommandResult> validateUsersExists = parseResult =>
         {
-            try
-            {
-                logins = parseResult.GetRequiredValue(loginsArg);
-            }
-            catch (InvalidOperationException)
-            {
-                parseResult.AddError("Login was not provided.");
-                return;
-            }
+            logins = GetLogins(parseResult);
+            if (logins is null) return;
             ForeachUserLogins(parseResult);
         };
         Action<CommandResult> validateUserExists = parseResult =>
@@ -316,7 +346,6 @@ internal class Program
         userSetMACCmd.Validators.Add(validateUserExists);
         userDeleteCmd.Validators.Add(validateUsersExists);
         
-        ulong? category = 0;
         userSetMACCategoryCmd.Validators.Add(result =>
         {
             try
@@ -333,7 +362,6 @@ internal class Program
                 result.AddError("Mandatory access control category is not set.");
         });
         
-        byte? level = 0;
         userSetMACLevelCmd.Validators.Add(result =>
         {
             try
@@ -348,6 +376,13 @@ internal class Program
             if (level is null) 
                 result.AddError("Mandatory access control level is not set.");
         });
+        #endregion
+
+        #region Command actions
+        Action<ParseResult> bootServerAction = _ => // boot command just sets bool and returns
+        {
+            bootServer = true;
+        };
         
         rootCmd.SetAction(bootServerAction);
         bootCmd.SetAction(bootServerAction);
@@ -360,29 +395,20 @@ internal class Program
         
         tokenRevokeAllCmd.SetAction(async _ =>
         {
-            Log.Warning("Attention! This action will revoke all active tokens. " +
-                        "This means, that all current sessions will be invalid.");
-            Log.Warning("Do you really want to proceed? (y/N)");
-            string response;
-            do
-            {
-                Log.Information("Y or N.");
-                response = Console.ReadLine()?.ToLower() ?? "n";
-            } while (response != "y" || response != "n");
-            if (response == "n") return;
-            foreach (var activeTokenKey in tokenStorage.GetActiveTokenKeys)
-            {
-                await tokenStorage.RevokeToken(activeTokenKey);
-                Log.Information("Token key {TokenKey} was revoked.", activeTokenKey);
-            }
+            // Critical command accidental execution prevention
+            if (!ConsoleHelper.AccidentalExecutionPrevention("This action will revoke all active token keys.\n" +
+                                              "This means, that all current sessions will be invalid.")) return;
+            await tokenStorage.RevokeTokenKeys(tokenStorage.GetActiveTokenKeys.ToArray());
+            Log.Information("All token keys was revoked.");
         });
         
         userAddCmd.SetAction( _ =>
         {
+            // Creates separate logger for logging password only in console
             var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
             foreach (string login in logins)
             {
-                var pass = AuthStatic.GenerateRandomPassword(24);
+                var pass = AuthStatic.GenerateRandomPassword(24); // Generates random default password
                 localAuthStorage.RegisterUser(login, pass).Wait();
                 Log.Information("Added user {login} with password [:::SECRET:::]", login);
                 sensitiveLogger.Information("Password for user {login}: {pass}", login, pass);
@@ -401,19 +427,19 @@ internal class Program
         
         userSetMACCategoryCmd.SetAction(async _ =>
         {
-            LocalAuthUser user = users[0];
+            LocalAuthUser user = users[0]; // Gets first user (because there is only one)
             user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokenKeys(user.Login);
+            await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
         userSetMACLevelCmd.SetAction(async _ =>
         {
-            LocalAuthUser user = users[0];
+            LocalAuthUser user = users[0]; // Gets first user (because there is only one)
             user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokenKeys(user.Login);
+            await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
@@ -421,28 +447,11 @@ internal class Program
         {
             LocalAuthUser user = users[0];
             Console.Write("Enter password: ");
-            var pass = string.Empty;
-            ConsoleKey key;
-            do
-            {
-                var keyInfo = Console.ReadKey(intercept: true);
-                key = keyInfo.Key;
-
-                if (key == ConsoleKey.Backspace && pass.Length > 0)
-                {
-                    Console.Write("\b \b");
-                    pass = pass[0..^1];
-                }
-                else if (!char.IsControl(keyInfo.KeyChar))
-                {
-                    Console.Write("*");
-                    pass += keyInfo.KeyChar;
-                }
-            } while (key != ConsoleKey.Enter);
+            var pass = ConsoleHelper.HiddenRead(); // Hides input
             Console.WriteLine();
             try
             {
-                if (pass.Length < 8)
+                if (pass.Length < 8) // If password is too short, return
                 {
                     Log.Error("Password is too short.");
                     return;
@@ -452,13 +461,14 @@ internal class Program
             }
             catch (AggregateException ex)
             {
-                if (ex.InnerException is ArgumentException)
+                if (ex.InnerException is ArgumentException) // Show error if password change fails
                 {
                     Log.Error(ex.InnerException.Message);
                 }
             }
         });
         
+        // Finds and add users to list by logins
         void ForeachUserLogins(CommandResult parseResult)
         {
             users = new List<LocalAuthUser>(logins.Length);
@@ -474,14 +484,33 @@ internal class Program
                 users.Add(findedUser);
             }
         }
+        // Gets logins from argument and shows error if fails
+        string[]? GetLogins(CommandResult parseResult)
+        {
+            try
+            {
+                logins = parseResult.GetRequiredValue(loginsArg);
+            }
+            catch (InvalidOperationException)
+            {
+                parseResult.AddError("Logins was not provided or invalid.");
+                return null;
+            }
+
+            return logins;
+        }
+        #endregion
         
-        rootCmd.Parse(args).Invoke();
+        rootCmd.Parse(args).Invoke(); // Running command
         return bootServer;
     }
 
+    /// <summary>
+    /// Prevent redirection when access is denied
+    /// </summary>
+    /// <param name="redirContext">Redirect context</param>
     private static async Task _FakeRedirectAccessDenied(RedirectContext<CookieAuthenticationOptions> redirContext)
     {
-        // Prevent redirection when access is denied
         redirContext.Response.StatusCode = StatusCodes.Status403Forbidden;
         var returnUrl = redirContext.HttpContext.Request.GetRedirectUrl();
         if (!await redirContext.HttpContext.TrySendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.",
@@ -493,18 +522,22 @@ internal class Program
         }
     }
 
+    /// <summary>
+    /// Login GET route
+    /// </summary>
     private static async Task _LoginPage(HttpContext context)
     {
         var token = context.GetUserToken();
         if (token is not null && await token.VerifyToken(context.RequestServices.GetService<TokenKeyStorage>(),
-                context.RequestServices.GetTokenProvider(token)))
+                context.RequestServices.GetTokenProvider(token))) // If user already auth, redirect
         {
             context.RedirectToRedirectUrl();
+            return;
         }
 
         try
         {
-            await context.Response.SendLoginAsync();
+            await context.Response.SendLoginAsync(); // else, send login page
         }
         catch (FileNotFoundException e)
         { 
@@ -517,29 +550,33 @@ internal class Program
         }
     }
 
+    /// <summary>
+    /// Login POST route
+    /// </summary>
     private static async Task _LoginPost(HttpContext context)
     {
+        // If Form does not contains auth method, throwing user to login page with error
         if (!context.Request.Form.TryGetValue("authMethod", out var authMethod) || string.IsNullOrEmpty(authMethod))
         {
             Log.Warning("Missing authMethod field in form. Skipping.");
-            context.Response.Redirect("/");
+            context.Response.RedirectWithLoginError("Missing authentication method field.");
             return;
         }
 
         var tokenProvider = context.RequestServices.GetTokenProvider(authMethod!);
-        if (tokenProvider is null)
+        if (tokenProvider is null) // If no provider, error user
         {
             Log.Warning("Missing token provider {authMethod}.", authMethod);
             context.Response.RedirectWithLoginError("Failed to use selected auth method.");
             return;
         }
-        if (tokenProvider is not FormTokenProvider)
+        if (tokenProvider is not FormTokenProvider provider) // If provider is not for Form login, error user
         {
             Log.Warning("Requested token provider {authMethod} is not form token provider.", authMethod);
             context.Response.RedirectWithLoginError("This auth method does not supports login form.");
             return;
         }
-        if (await context.SignIn((FormTokenProvider)tokenProvider, DateTime.Now.Add(TokenLifeSpan)))
+        if (await context.SignIn(provider, DateTime.Now.Add(TokenLifeSpan)))
         {
             context.RedirectToRedirectUrl();
             return;
@@ -548,17 +585,27 @@ internal class Program
         context.Response.RedirectWithLoginError("Failed to verify info you provided.");
     }
 
+    /// <summary>
+    /// Logout route
+    /// </summary>
     private static async Task _Logout(HttpContext context)
     {
         var tokenAuthMethod = context.GetUserToken()?.AuthMethod;
-        if (string.IsNullOrEmpty(tokenAuthMethod)) return;
+        if (string.IsNullOrEmpty(tokenAuthMethod)) return; // Null when token is null
         if (await context.SignOut())
         {
             Log.Warning("Token provider {tokenAuthMethod} was not found. Maybe token is not properly destroyed.", tokenAuthMethod);
         }
         context.RedirectToRedirectUrl();
     }
+    /// <summary>
+    /// Is HTTPS enabled in app. Works after app start.
+    /// </summary>
     public static bool IsHttpsEnabled { get; private set; }
+    /// <summary>
+    /// Searches for https:// endpoint
+    /// </summary>
+    /// <returns>Is HTTPS endpoint exists</returns>
     private static bool _IsHttpsEnabled()
     {
         foreach (var url in app.Urls)
@@ -570,7 +617,4 @@ internal class Program
         }
         return false;
     }
-    
-    private static async Task<bool> AuthorizeTokenForContext(HttpContext context) =>
-        await context.GetUserToken().AuthorizeTokenForRoute(context.GetEndpoint()?.Metadata.GetMetadata<RouteModel>()?.Config.RouteId!, context.RequestServices);
 }
