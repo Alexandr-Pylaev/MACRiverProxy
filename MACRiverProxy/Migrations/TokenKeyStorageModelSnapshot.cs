@@ -9,13 +9,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MACRiverProxy.Migrations
 {
-    [DbContext(typeof(TokenStorage))]
-    partial class TokenStorageModelSnapshot : ModelSnapshot
+    [DbContext(typeof(TokenKeyStorage))]
+    partial class TokenKeyStorageModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.14");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.15");
 
             modelBuilder.Entity("MACRiverProxy.Auth.Tokens.TokenKey", b =>
                 {
@@ -26,9 +26,13 @@ namespace MACRiverProxy.Migrations
                     b.Property<DateTime>("ExpireTime")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserIdentifier")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Key");
 
-                    b.ToTable("ActiveTokens");
+                    b.ToTable("ActiveTokenKeys");
                 });
 #pragma warning restore 612, 618
         }

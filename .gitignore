@@ -490,5 +490,5 @@ riderModule.iml
 # appsettings may contain sensitive data
 **/appsettings**.json
 
-**/db/**
-**/pages/**
+# Ignore all files, that is used when debugging
+**/temp/**
