@@ -57,14 +57,19 @@ internal class Program
                 });
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
-            kestOpt.ListenAnyIP(80);
-            if (Environment.GetEnvironmentVariable("ENABLE_HTTPS") == "1")
+            kestOpt.ConfigureHttpsDefaults(httpsOpt =>
             {
-                kestOpt.ListenAnyIP(443, lisOpt =>
-                {
-                    lisOpt.UseHttps("/certs/cert.pfx");
-                });
-            }
+                httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable("HTTPS_PEM_PASS") is null ? 
+                    X509Certificate2
+                        .CreateFromPemFile(
+                            "/certs/cert.pem",
+                            "/certs/key.pem"):
+                    X509Certificate2
+                        .CreateFromEncryptedPemFile(
+                            "/certs/cert.pem",
+                            Environment.GetEnvironmentVariable("HTTPS_PEM_PASS"),
+                            "/certs/key.pem");
+            });
         });
 
         #endregion
