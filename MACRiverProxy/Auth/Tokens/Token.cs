@@ -25,7 +25,7 @@ public sealed class Token(string authMethod, string userIdentifier) : IMACTag
     /// Text, that identifies user and allow user tracking
     /// </summary>
     /// <remarks>Always set this field in <see cref="TokenProvider"/> because this field is used for tracking user activity</remarks>
-    public string UserIdentifier { get; set; } = userIdentifier;
+    public string UserIdentifier { get; private set; } = userIdentifier;
 
     /// <summary>
     /// Token key object.
