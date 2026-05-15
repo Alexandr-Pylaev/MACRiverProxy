@@ -39,7 +39,7 @@ public class LocalAuthTokenProvider(LocalAuthStorage localAuthStorage, TokenKeyS
             MACCategory = findedUser.MACCategory,
             MACLevel = findedUser.MACLevel
         };
-        await tokenStorage.RegisterToken(DateTime.Now.AddDays(1), token);
+        await tokenStorage.RegisterToken(DateTime.Now.Add(Program.TokenLifeSpan), token);
         return token;
     }
     /// <summary>
