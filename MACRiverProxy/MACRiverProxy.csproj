@@ -15,9 +15,6 @@
         <Link>.dockerignore</Link>
       </Content>
       <None Remove="Pages\ErrorPage.html" />
-      <Content Include="Pages\ErrorPage.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
       <None Remove="Pages\Login.html" />
       <Content Include="Pages\Login.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
