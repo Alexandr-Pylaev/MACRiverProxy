@@ -57,6 +57,8 @@ public static class RouteStatic
             return false;
         }
 
+        Log.Debug("Route: {routeId}: MAC Level={level}, Category={cat}", routeId, macLevel, macCategory);
+        
         if (!(await token.VerifyToken(tokenStorage, tokenProvider)))
         {
             Log.Information("Token [{tokenKey}:{userId}] failed to verify.", token.TokenKey, token.UserIdentifier);
