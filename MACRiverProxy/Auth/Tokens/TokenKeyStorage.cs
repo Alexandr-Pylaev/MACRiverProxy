@@ -49,7 +49,7 @@ public class TokenKeyStorage : DbContext
     /// </summary>
     private void _RegisterToken(DateTime expires, Token token)
     {
-        TokenKey k = new TokenKey() {ExpireTime = expires};
+        TokenKey k = new TokenKey() {ExpireTime = expires, UserIdentifier = token.UserIdentifier};
         token.TokenKeyModel = k;
         var ent = ActiveTokenKeys.Add(token.TokenKeyModel);
         token.TokenKeyModel = ent.Entity; // Update key model because it is not updates on object automatically
