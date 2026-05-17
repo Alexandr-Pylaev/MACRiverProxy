@@ -7,9 +7,9 @@ namespace MACRiverProxy.Auth;
 /// </summary>
 public static class AuthStatic
 {
-    // Fix: IServiceCollection.AddAuthorization() does not have configuration action as arg
+    // Fix: IServiceCollection.AddAuthorization() does not have service provider
     /// <summary>
-    /// Adds authorization with options
+    /// Adds authorization and adds <see cref="IServiceProvider"/> to configure arguments
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="configure">Configure action</param>
