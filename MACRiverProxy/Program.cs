@@ -517,7 +517,7 @@ internal class Program
     private static async Task _FakeRedirectAccessDenied(RedirectContext<CookieAuthenticationOptions> redirContext)
     {
         redirContext.Response.StatusCode = StatusCodes.Status403Forbidden;
-        var returnUrl = redirContext.HttpContext.Request.GetRedirectUrl();
+        var returnUrl = redirContext.HttpContext.Request.Path;
         if (!await redirContext.HttpContext.TrySendErrorPageAsync(HttpStatusCode.Forbidden, "Access denied.",
                 "Proxy failed to authorize you and forbidden access to this resource. \n" +
                 $"<a href=\'/logout?ReturnURL=/login?ReturnURL={returnUrl}\'>You can re-login</a> if you using wrong account and try again.\n",
