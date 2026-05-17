@@ -23,11 +23,13 @@ internal class Program
     public static void Main(string[] args)
     {
         #region Pre-builder setup
+
+        var logPath = $"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log";
         Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
-            .WriteTo.File($"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log")
+            .WriteTo.File(logPath)
             .Enrich.WithCorrelationId()
-            .CreateLogger();
+            .CreateBootstrapLogger();
         // Close logger on process exit
         AppDomain.CurrentDomain.ProcessExit += (_, _) => { Log.CloseAndFlush(); };
         try // Fix for "SQLite Error 14: 'unable to open database file'." when folder does not exist
@@ -51,7 +53,12 @@ internal class Program
         #endregion
         
         var builder = WebApplication.CreateBuilder(args);
-
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .WriteTo.Console()
+            .WriteTo.File(logPath)
+            .Enrich.WithCorrelationId()
+            .CreateLogger();
         #region Builder app setup
 
         builder.Services.AddSerilog();
