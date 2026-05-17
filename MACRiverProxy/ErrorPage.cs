@@ -74,7 +74,7 @@ public static class ErrorPage
     private static async Task<string> GenerateErrorPage(string errorHeader, string errorMessage,
         string errorCode = ERR_GENERIC)
     {
-        var fileData = await File.ReadAllTextAsync("./Pages/ErrorPage.html");
+        var fileData = await File.ReadAllTextAsync("./Pages/Error.html");
         return fileData.Replace("@errorHeader",
             errorHeader).Replace("@errorMessage",
             errorMessage.Replace("\n", "<br/>"))
