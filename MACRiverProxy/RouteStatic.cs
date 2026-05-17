@@ -89,6 +89,6 @@ public static class RouteStatic
     /// <exception cref="InvalidOperationException">Throws when value cannot be converted to target type.</exception>
     public static T? GetRouteConfigValue<T>(this IConfiguration configServ, string routeId, string key)
     {
-        return configServ.GetValue<T?>($"ReverseProxy:Routes:{routeId}:{key}");
+        return configServ.GetValue<T?>($"{Program.REVERSE_PROXY_CONFIG_NAME}:Routes:{routeId}:{key}");
     }
 }

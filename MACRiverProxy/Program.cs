@@ -198,15 +198,15 @@ internal class Program
     /// <summary>
     /// Name for Reverse proxy config section
     /// </summary>
-    private const string REVERSE_PROXY_CONFIG_NAME ="MACRiver";
+    public const string REVERSE_PROXY_CONFIG_NAME ="MACRiver";
     /// <summary>
     /// Name for token life span number in minutes in config
     /// </summary>
-    private const string TOKEN_LIFE_SPAN_MINUTES_CONFIG_NAME = $"{REVERSE_PROXY_CONFIG_NAME}:TokenLifeSpanMinutes";
+    public const string TOKEN_LIFE_SPAN_MINUTES_CONFIG_NAME = $"{REVERSE_PROXY_CONFIG_NAME}:TokenLifeSpanMinutes";
     /// <summary>
     /// Env name for PEM password
     /// </summary>
-    private const string HTTPS_PEM_PASS_ENV_NAME = "HTTPS_PEM_PASS";
+    public const string HTTPS_PEM_PASS_ENV_NAME = "HTTPS_PEM_PASS";
 
     /// <summary>
     /// Executes CLI tool
