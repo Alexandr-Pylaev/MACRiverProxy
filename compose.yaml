@@ -14,7 +14,7 @@
       - "./appsettings.json:/app/appsettings.json"
       - "./db/:/app/db/"
       - "./pages/:/app/Pages/:ro"
-      - "./certs/:/certs/:ro" # Cert should be in format key.pem - key, cert.pem - fullchain/cert
+      - "./certs/:/app/certs/:ro" # Cert should be in format key.pem - key, cert.pem - fullchain/cert
       - "./logs/:/app/logs/"
     restart: unless-stopped
     
