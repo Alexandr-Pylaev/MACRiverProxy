@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.RegularExpressions;
 using Serilog;
 
 namespace MACRiverProxy;
@@ -26,6 +27,7 @@ public static class LoginPage
     /// <param name="response">HTTP response</param>
     /// <param name="error">Error text</param>
     public static void RedirectWithLoginError(this HttpResponse response, string error) {
-        response.Redirect($"/login?error={error.EscapeCharactersForUrl()}");
+        response.Redirect($"/login?error={error.EscapeCharactersForUrl()}{Regex.Replace(response.HttpContext.Request.QueryString.Value?.Replace("?", "") 
+            ?? "", @"&?error=[^&]*", "")}");
     }
 }
