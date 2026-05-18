@@ -1,7 +1,7 @@
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-x64 -o "./Publish/Linux-x64" ./MACRiverProxy/MACRiverProxy.csproj
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-musl-x64 -o "./Publish/Linux-musl-x64" ./MACRiverProxy/MACRiverProxy.csproj
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-musl-arm64 -o "./Publish/Linux-musl-arm64" ./MACRiverProxy/MACRiverProxy.csproj
-dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-arm --runtime linux-arm64 -o "./Publish/Linux-arm" ./MACRiverProxy/MACRiverProxy.csproj
+dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-arm -o "./Publish/Linux-arm" ./MACRiverProxy/MACRiverProxy.csproj
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime linux-arm64 -o "./Publish/Linux-arm64" ./MACRiverProxy/MACRiverProxy.csproj
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained  --runtime osx-arm64 -o "./Publish/macOS-arm64" ./MACRiverProxy/MACRiverProxy.csproj
 dotnet publish -p:PublishTrimmed=true -p:PublishSingleFile=true --configuration Release --self-contained --runtime osx-x64 -o "./Publish/macOS-x64" ./MACRiverProxy/MACRiverProxy.csproj
