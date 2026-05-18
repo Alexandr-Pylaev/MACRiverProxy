@@ -194,7 +194,7 @@ internal class Program
         });
         app.Start(); // Starts app, but does not lock it
         IsHttpsEnabled = _IsHttpsEnabled();
-        if (IsHttpsEnabled) // Warns admin that proxy is not using HTTPS
+        if (!IsHttpsEnabled) // Warns admin that proxy is not using HTTPS
         {
             Log.Error("=========================================");
             Log.Error("HTTPS is not enabled on this proxy.");
