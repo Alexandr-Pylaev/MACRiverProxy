@@ -27,7 +27,7 @@ public static class LoginPage
     /// <param name="response">HTTP response</param>
     /// <param name="error">Error text</param>
     public static void RedirectWithLoginError(this HttpResponse response, string error) {
-        response.Redirect($"/login?error={error.EscapeCharactersForUrl()}{Regex.Replace(response.HttpContext.Request.QueryString.Value?.Replace("?", "") 
+        response.Redirect($"/login?error={error.EscapeCharactersForUrl()}&{Regex.Replace(response.HttpContext.Request.QueryString.Value?.Replace("?", "") 
             ?? "", @"&?error=[^&]*", "")}");
     }
 }
