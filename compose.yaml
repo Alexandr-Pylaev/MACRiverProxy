@@ -1,10 +1,7 @@
 ﻿services:
   river_proxy:
-    image: mac_riverproxy
+    image: ghcr.io/alexandr-pylaev/macriverproxy:latest
     container_name: river_proxy
-    build:
-      context: .
-      dockerfile: MACRiverProxy/Dockerfile
     env_file:
       - .env
     ports: 
