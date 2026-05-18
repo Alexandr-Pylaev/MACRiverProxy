@@ -6,7 +6,7 @@
       - .env
     ports: 
       - "80:80"
-      - "443:443" # Works only when HTTPS endpoint is setup
+      - "443:443" # Works only when HTTPS endpoint is set up
     volumes: 
       - "./appsettings.json:/app/appsettings.json"
       - "./db/:/app/db/"
