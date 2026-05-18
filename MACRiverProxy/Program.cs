@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using MACRiverProxy.Auth;
 using MACRiverProxy.Auth.LocalAuth;
@@ -73,21 +74,33 @@ internal class Program
         // Configuring defaults for HTTPS
         builder.WebHost.ConfigureKestrel(kestOpt =>
         {
-            // Setting default certificate to /certs/cert(key).pem
-            kestOpt.ConfigureHttpsDefaults(httpsOpt =>
+            bool disableDefaults = false;
+            try
             {
-                // If pem password set, use that
-                httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME) is null ? 
-                    X509Certificate2
-                        .CreateFromPemFile(
-                            "./certs/cert.pem",
-                            "./certs/key.pem"):
-                    X509Certificate2
-                        .CreateFromEncryptedPemFile(
-                            "./certs/cert.pem",
-                            Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME),
-                            "./certs/key.pem");
-            });
+                // Setting default certificate to /certs/cert(key).pem
+                disableDefaults = Environment.GetEnvironmentVariable("DISABLE_DEFAULT_CERT_PATH") != "1";
+            }
+            catch (SecurityException ex)
+            {
+                Log.Error("Failed to get access to environment variables: {exMsg}", ex.Message);
+            }
+            if (!disableDefaults)
+            {
+                kestOpt.ConfigureHttpsDefaults(httpsOpt =>
+                {
+                    // If pem password set, use that
+                    httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME) is null ? 
+                        X509Certificate2
+                            .CreateFromPemFile(
+                                "./certs/cert.pem",
+                                "./certs/key.pem"):
+                        X509Certificate2
+                            .CreateFromEncryptedPemFile(
+                                "./certs/cert.pem",
+                                Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME),
+                                "./certs/key.pem");
+                });
+            }
         });
 
         #endregion
