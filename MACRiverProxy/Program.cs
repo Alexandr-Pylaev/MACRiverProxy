@@ -80,13 +80,13 @@ internal class Program
                 httpsOpt.ServerCertificate = Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME) is null ? 
                     X509Certificate2
                         .CreateFromPemFile(
-                            "/certs/cert.pem",
-                            "/certs/key.pem"):
+                            "./certs/cert.pem",
+                            "./certs/key.pem"):
                     X509Certificate2
                         .CreateFromEncryptedPemFile(
-                            "/certs/cert.pem",
+                            "./certs/cert.pem",
                             Environment.GetEnvironmentVariable(HTTPS_PEM_PASS_ENV_NAME),
-                            "/certs/key.pem");
+                            "./certs/key.pem");
             });
         });
 
