@@ -21,6 +21,10 @@
       </Content>
       <Content Remove="db\**" />
       <None Remove="db\**" />
+      <None Remove="REPLACE example.appsettings.json with appsettings.json .empty" />
+      <Content Include="rename [example.appsettings.json] to [appsettings.json] .empty">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>
