@@ -1,0 +1,64 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://*:80"
+      },
+      "Https": {
+        "Url": "https://*:443"
+      }
+    }
+  },
+  "AllowedHosts": "*",
+  "MACRiver": {
+    "TokenLifeSpanMinutes": 1440,
+    "Routes": {
+      "example-restricted-route" : {
+        "ClusterId": "example-cluster",
+        "AuthorizationPolicy": "restricted",
+        "MACLevel": 15,
+        "MACCategory": 0,
+        "Match": {
+          "Path": "/examples/restricted/"
+        },
+        "Transforms" : [{
+          "PathRemovePrefix": "/examples/restricted"
+        }]
+      },
+      "example-restricted-category-route" : {
+        "ClusterId": "example-cluster",
+        "AuthorizationPolicy": "restricted",
+        "MACLevel": 0,
+        "MACCategory": 18014398509481985,
+        "Match": {
+          "Path": "/examples/restricted-category/"
+        },
+        "Transforms" : [{
+          "PathRemovePrefix": "/examples/restricted-category"
+        }]
+      },
+      "example-public-route" : {
+        "ClusterId": "example-cluster",
+        "AuthorizationPolicy": "none",
+        "Match": {
+          "Path": "/examples/public/"
+        }
+      }
+    },
+    "Clusters": {
+      "example-cluster": {
+        "Destinations": {
+          "some-destination": {
+            "Address": "https://example.com/"
+          }
+        }
+      }
+    }
+  }
+}
