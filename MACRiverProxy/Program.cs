@@ -222,7 +222,7 @@ internal class Program
     public const string HTTPS_PEM_PASS_ENV_NAME = "HTTPS_PEM_PASS";
 
     /// <summary>
-    /// Executes CLI tool
+    /// Executes CLI tool. You can disable that method if you don't use <see cref="LocalAuthTokenProvider"/>.
     /// </summary>
     /// <param name="args">CMD args</param>
     /// <returns>Should server boot</returns>
