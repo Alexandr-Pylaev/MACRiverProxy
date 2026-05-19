@@ -419,7 +419,7 @@ internal class Program
         rootCmd.SetAction(bootServerAction);
         bootCmd.SetAction(bootServerAction);
         
-        tokenRevokeAllCmd.SetAction(cmdResult =>
+        tokenRevokeCmd.SetAction(cmdResult =>
         {
             Log.Information("{RemovedTokenCount} token key(s) was removed.", 
                 tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)));
