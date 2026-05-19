@@ -248,10 +248,21 @@ internal class Program
                                                    
                                                    "(be aware, that old tokens will still have old MAC tag)");
         Command userSetMACLevelCmd = new Command("level", "Sets user's mandatory access control level");
-        Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category");
+        Command userSetMACCategoryCmd = new Command("category", "Sets user's mandatory access control category. When used with --add, " +
+                                                                "expects category number, not category bits.");
         // ReSharper restore InconsistentNaming
         #endregion
 
+        #region Options objects
+
+        Option<bool> additiveOpt = new Option<bool>("--add", "-a")
+        {
+            Description = "Adds to MAC tag and not replaces it.",
+            DefaultValueFactory = _ => false
+        };
+
+        #endregion
+        
         #region Argument objects
         Argument<string[]> loginsArg = new Argument<string[]>("logins")
         {
@@ -301,6 +312,8 @@ internal class Program
         
         userSetMACCmd.Add(userSetMACLevelCmd);
         userSetMACCmd.Add(userSetMACCategoryCmd);
+        userSetMACCategoryCmd.Add(additiveOpt);
+        userSetMACLevelCmd.Add(additiveOpt);
         #endregion
         
         #region Registering arguments for commands
@@ -443,19 +456,27 @@ internal class Program
             Log.Information("Done.");
         });
         
-        userSetMACCategoryCmd.SetAction(async _ =>
+        userSetMACCategoryCmd.SetAction(async parseResult =>
         {
             LocalAuthUser user = users[0]; // Gets first user (because there is only one)
-            user.MACCategory = category ?? user.MACCategory;
+            if (parseResult.GetValue<bool>(additiveOpt))
+            {
+                user.AddMACCategory((byte?) category ?? 0);
+            }
+            else user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
             await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
             Log.Information("Done. All active tokens of this user is removed.");
         });
         
-        userSetMACLevelCmd.SetAction(async _ =>
+        userSetMACLevelCmd.SetAction(async parseResult =>
         {
             LocalAuthUser user = users[0]; // Gets first user (because there is only one)
-            user.MACLevel = level ?? user.MACLevel;
+            if (parseResult.GetValue<bool>(additiveOpt))
+            {
+                user.AddMACLevel(level ?? user.MACLevel);
+            }
+            else user.MACLevel = level ?? user.MACLevel;
             await localAuthStorage.SaveChangesAsync();
             await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
             Log.Information("Done. All active tokens of this user is removed.");
