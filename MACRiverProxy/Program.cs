@@ -422,7 +422,7 @@ internal class Program
         tokenRevokeCmd.SetAction(cmdResult =>
         {
             Log.Information("{RemovedTokenCount} token key(s) was removed.", 
-                tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)));
+                tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)).Result);
         });
         
         tokenRevokeAllCmd.SetAction(async _ =>
