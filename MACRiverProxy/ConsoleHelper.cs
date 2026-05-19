@@ -42,13 +42,12 @@ public static class ConsoleHelper
     {
         Log.Warning($"Attention! {text}");
         Log.Warning("Do you really want to proceed? (y/N)");
-        string response;
-        do
+        string? response = Console.ReadLine()?.ToLower();
+        while (response is not ("y" or "n" or "" or null))
         {
             Log.Information("Y or N.");
-            response = Console.ReadLine()?.ToLower() ?? "n";
-        } while (response != "y" || response != "n");
-        if (response == "n") return false;
-        return true;
+            response = Console.ReadLine()?.ToLower();
+        } 
+        return response is "y";
     }
 }
