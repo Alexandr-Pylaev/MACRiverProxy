@@ -374,7 +374,8 @@ internal class Program
         };
         
         userSetPasswordCmd.Validators.Add(validateUserExists);
-        userSetMACCmd.Validators.Add(validateUserExists);
+        userSetMACCategoryCmd.Validators.Add(validateUserExists);
+        userSetMACLevelCmd.Validators.Add(validateUserExists);
         userDeleteCmd.Validators.Add(validateUsersExists);
         
         userSetMACCategoryCmd.Validators.Add(result =>
