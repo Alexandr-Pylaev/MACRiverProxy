@@ -462,7 +462,8 @@ internal class Program
             LocalAuthUser user = users[0]; // Gets first user (because there is only one)
             if (parseResult.GetValue<bool>(additiveOpt))
             {
-                user.AddMACCategory((byte?) category ?? 0);
+                user.AddMACCategory((byte)
+                    ((category ?? throw new InvalidOperationException("Category cannot be null.")) - 1));
             }
             else user.MACCategory = category ?? user.MACCategory;
             await localAuthStorage.SaveChangesAsync();
