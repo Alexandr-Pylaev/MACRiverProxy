@@ -78,7 +78,7 @@ internal class Program
             try
             {
                 // Setting default certificate to /certs/cert(key).pem
-                disableDefaults = Environment.GetEnvironmentVariable("DISABLE_DEFAULT_CERT_PATH") != "1";
+                disableDefaults = Environment.GetEnvironmentVariable("DISABLE_DEFAULT_CERT_PATH") == "1";
             }
             catch (SecurityException ex)
             {
