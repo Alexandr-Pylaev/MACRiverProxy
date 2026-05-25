@@ -20,7 +20,8 @@ public class LocalAuthUser : IMACTag
     /// <summary>
     /// User login, also, a primary key.
     /// </summary>
-    [Key]
+    [Key] 
+    [StringLength(128)]
     public string Login { get; set; }
     public byte MACLevel { get; set; } = 0;
     public ulong MACCategory { get; set; }= 0;
