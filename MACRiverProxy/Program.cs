@@ -28,7 +28,7 @@ internal class Program
         var logPath = $"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log";
         Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
-            .WriteTo.File(logPath)
+            .WriteTo.File(logPath, rollingInterval:RollingInterval.Day)
             .Enrich.WithCorrelationId()
             .CreateBootstrapLogger();
         // Close logger on process exit
