@@ -25,7 +25,7 @@ internal class Program
     {
         #region Pre-builder setup
 
-        var logPath = $"./logs/{DateTime.Now:yyyy-mm-dd hh.mm.ss}.log";
+        var logPath = $"./logs/{DateTime.Now:yyyy-MM-dd HH.mm.ss}.log";
         Log.Logger = new LoggerConfiguration() 
             .WriteTo.Console()
             .WriteTo.File(logPath, rollingInterval:RollingInterval.Day)
