@@ -48,8 +48,8 @@ public static class RouteStatic
             if (config.GetRouteConfigValue<string?>(routeId, "AuthorizationPolicy")?.ToLower() != Restricted)
                 return true;
 
-            macLevel = config.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MaxValue;
-            macCategory = config.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MaxValue;
+            macLevel = config.GetRouteConfigValue<byte?>(routeId, "MACLevel") ?? byte.MinValue;
+            macCategory = config.GetRouteConfigValue<ulong?>(routeId, "MACCategory") ?? ulong.MinValue;
         }
         catch (InvalidCastException ex)
         {
