@@ -333,216 +333,237 @@ internal class Program
         LocalAuthStorage localAuthStorage = new LocalAuthStorage();
         byte? level = 0; // Stores MAC level after validation
         ulong? category = 0; // Stores MAC category after validation
-        
-        // Migrating dbs just to be sure
-        tokenStorage.Database.Migrate();
-        localAuthStorage.Database.Migrate(); 
-        
-        #region Validators
-        // GetRequiredValue raises InvalidOperationException on no value or invalid value
-        // GetValue raises InvalidOperationException on invalid input
-        userAddCmd.Validators.Add((parseResult) =>
+        try
         {
-            logins = GetLogins(parseResult);
-            if (logins is null) return;
-            foreach (string login in logins)
+            // Migrating dbs just to be sure
+            tokenStorage.Database.Migrate();
+            localAuthStorage.Database.Migrate();
+
+            #region Validators
+
+            // GetRequiredValue raises InvalidOperationException on no value or invalid value
+            // GetValue raises InvalidOperationException on invalid input
+            userAddCmd.Validators.Add((parseResult) =>
             {
-                if (localAuthStorage.IsUserRegistered(login).Result)
+                logins = GetLogins(parseResult);
+                if (logins is null) return;
+                foreach (string login in logins)
                 {
-                    parseResult.AddError($"Login {login} is already registered.");
+                    if (localAuthStorage.IsUserRegistered(login).Result)
+                    {
+                        parseResult.AddError($"Login {login} is already registered.");
+                    }
                 }
-            }
-        });
-        Action<CommandResult> validateUsersExists = parseResult =>
-        {
-            logins = GetLogins(parseResult);
-            if (logins is null) return;
-            ForeachUserLogins(parseResult);
-        };
-        Action<CommandResult> validateUserExists = parseResult =>
-        {
-            try
+            });
+            Action<CommandResult> validateUsersExists = parseResult =>
             {
-                logins = [parseResult.GetRequiredValue(loginArg)];
-            }
-            catch (InvalidOperationException)
+                logins = GetLogins(parseResult);
+                if (logins is null) return;
+                ForeachUserLogins(parseResult);
+            };
+            Action<CommandResult> validateUserExists = parseResult =>
             {
-                parseResult.AddError("Login was not provided.");
-                return;
-            }
-            ForeachUserLogins(parseResult);
-        };
-        
-        userSetPasswordCmd.Validators.Add(validateUserExists);
-        userSetMACCategoryCmd.Validators.Add(validateUserExists);
-        userSetMACLevelCmd.Validators.Add(validateUserExists);
-        userDeleteCmd.Validators.Add(validateUsersExists);
-        
-        userSetMACCategoryCmd.Validators.Add(result =>
-        {
-            try
-            {
-                category = result.GetValue(macCategoryArg);
-            }
-            catch (InvalidOperationException)
-            {
-                result.AddError("Mandatory access control category is invalid.");
-                return;
-            }
-
-            if (category is null) 
-                result.AddError("Mandatory access control category is not set.");
-        });
-        
-        userSetMACLevelCmd.Validators.Add(result =>
-        {
-            try
-            {
-                level = result.GetValue(macLevelArg);
-            }
-            catch (InvalidOperationException)
-            {
-                result.AddError("Mandatory access control level is invalid.");
-                return;
-            }
-            if (level is null) 
-                result.AddError("Mandatory access control level is not set.");
-        });
-        #endregion
-
-        #region Command actions
-        Action<ParseResult> bootServerAction = _ => // boot command just sets bool and returns
-        {
-            bootServer = true;
-        };
-        
-        rootCmd.SetAction(bootServerAction);
-        bootCmd.SetAction(bootServerAction);
-        
-        tokenRevokeCmd.SetAction(cmdResult =>
-        {
-            Log.Information("{RemovedTokenCount} token key(s) was removed.", 
-                tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)).Result);
-        });
-        
-        tokenRevokeAllCmd.SetAction(async _ =>
-        {
-            // Critical command accidental execution prevention
-            if (!ConsoleHelper.AccidentalExecutionPrevention("This action will revoke all active token keys.\n" +
-                                              "This means, that all current sessions will be invalid.")) return;
-            await tokenStorage.RevokeTokenKeys(tokenStorage.GetActiveTokenKeys.ToArray());
-            Log.Information("All token keys was revoked.");
-        });
-        
-        userAddCmd.SetAction( _ =>
-        {
-            // Creates separate logger for logging password only in console
-            var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
-            foreach (string login in logins)
-            {
-                var pass = AuthStatic.GenerateRandomPassword(24); // Generates random default password
-                localAuthStorage.RegisterUser(login, pass).Wait();
-                Log.Information("Added user {login} with password [:::SECRET:::]", login);
-                sensitiveLogger.Information("Password for user {login}: {pass}", login, pass);
-            }
-            Log.Information("Done.");
-        });
-        userDeleteCmd.SetAction( _ =>
-        {
-            foreach (LocalAuthUser user in users)
-            {
-                localAuthStorage.DeleteUser(user).Wait();
-                Log.Information("User {login} deleted.", user.Login);
-            }
-            Log.Information("Done.");
-        });
-        
-        userSetMACCategoryCmd.SetAction(async parseResult =>
-        {
-            LocalAuthUser user = users[0]; // Gets first user (because there is only one)
-            if (parseResult.GetValue<bool>(additiveOpt))
-            {
-                user.AddMACCategory((byte)
-                    ((category ?? throw new InvalidOperationException("Category cannot be null.")) - 1));
-            }
-            else user.MACCategory = category ?? user.MACCategory;
-            await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
-            Log.Information("Done. All active tokens of this user is removed.");
-        });
-        
-        userSetMACLevelCmd.SetAction(async parseResult =>
-        {
-            LocalAuthUser user = users[0]; // Gets first user (because there is only one)
-            if (parseResult.GetValue<bool>(additiveOpt))
-            {
-                user.AddMACLevel(level ?? user.MACLevel);
-            }
-            else user.MACLevel = level ?? user.MACLevel;
-            await localAuthStorage.SaveChangesAsync();
-            await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
-            Log.Information("Done. All active tokens of this user is removed.");
-        });
-        
-        userSetPasswordCmd.SetAction( _ =>
-        {
-            LocalAuthUser user = users[0];
-            Console.Write("Enter password: ");
-            var pass = ConsoleHelper.HiddenRead(); // Hides input
-            Console.WriteLine();
-            try
-            {
-                if (pass.Length < 8) // If password is too short, return
+                try
                 {
-                    Log.Error("Password is too short.");
+                    logins = [parseResult.GetRequiredValue(loginArg)];
+                }
+                catch (InvalidOperationException)
+                {
+                    parseResult.AddError("Login was not provided.");
                     return;
                 }
-                localAuthStorage.ChangePassword(user, pass).Wait();
-                Log.Information("Password changed for user {login}", user.Login);
-            }
-            catch (AggregateException ex)
+
+                ForeachUserLogins(parseResult);
+            };
+
+            userSetPasswordCmd.Validators.Add(validateUserExists);
+            userSetMACCategoryCmd.Validators.Add(validateUserExists);
+            userSetMACLevelCmd.Validators.Add(validateUserExists);
+            userDeleteCmd.Validators.Add(validateUsersExists);
+
+            userSetMACCategoryCmd.Validators.Add(result =>
             {
-                if (ex.InnerException is ArgumentException) // Show error if password change fails
+                try
                 {
-                    Log.Error(ex.InnerException.Message);
+                    category = result.GetValue(macCategoryArg);
                 }
-            }
-        });
-        
-        // Finds and add users to list by logins
-        void ForeachUserLogins(CommandResult parseResult)
-        {
-            users = new List<LocalAuthUser>(logins.Length);
-            foreach (string login in logins)
-            {
-                var findedUser = localAuthStorage.FindUser(login).Result;
-                if (findedUser is null)
+                catch (InvalidOperationException)
                 {
-                    parseResult.AddError($"Login {login} does not exists.");
-                    continue;
+                    result.AddError("Mandatory access control category is invalid.");
+                    return;
                 }
 
-                users.Add(findedUser);
-            }
-        }
-        // Gets logins from argument and shows error if fails
-        string[]? GetLogins(CommandResult parseResult)
-        {
-            try
+                if (category is null)
+                    result.AddError("Mandatory access control category is not set.");
+            });
+
+            userSetMACLevelCmd.Validators.Add(result =>
             {
-                logins = parseResult.GetRequiredValue(loginsArg);
-            }
-            catch (InvalidOperationException)
+                try
+                {
+                    level = result.GetValue(macLevelArg);
+                }
+                catch (InvalidOperationException)
+                {
+                    result.AddError("Mandatory access control level is invalid.");
+                    return;
+                }
+
+                if (level is null)
+                    result.AddError("Mandatory access control level is not set.");
+            });
+
+            #endregion
+
+            #region Command actions
+
+            Action<ParseResult> bootServerAction = _ => // boot command just sets bool and returns
             {
-                parseResult.AddError("Logins was not provided or invalid.");
-                return null;
+                bootServer = true;
+            };
+
+            rootCmd.SetAction(bootServerAction);
+            bootCmd.SetAction(bootServerAction);
+
+            tokenRevokeCmd.SetAction(cmdResult =>
+            {
+                Log.Information("{RemovedTokenCount} token key(s) was removed.",
+                    tokenStorage.RevokeTokenKeys(cmdResult.GetRequiredValue(userIdentifierArg)).Result);
+            });
+
+            tokenRevokeAllCmd.SetAction(async _ =>
+            {
+                // Critical command accidental execution prevention
+                if (!ConsoleHelper.AccidentalExecutionPrevention("This action will revoke all active token keys.\n" +
+                                                                 "This means, that all current sessions will be invalid."))
+                    return;
+                await tokenStorage.RevokeTokenKeys(tokenStorage.GetActiveTokenKeys.ToArray());
+                Log.Information("All token keys was revoked.");
+            });
+
+            userAddCmd.SetAction(_ =>
+            {
+                // Creates separate logger for logging password only in console
+                var sensitiveLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+                foreach (string login in logins)
+                {
+                    var pass = AuthStatic.GenerateRandomPassword(24); // Generates random default password
+                    localAuthStorage.RegisterUser(login, pass).Wait();
+                    Log.Information("Added user {login} with password [:::SECRET:::]", login);
+                    sensitiveLogger.Information("Password for user {login}: {pass}", login, pass);
+                }
+
+                Log.Information("Done.");
+            });
+            userDeleteCmd.SetAction(_ =>
+            {
+                foreach (LocalAuthUser user in users)
+                {
+                    localAuthStorage.DeleteUser(user).Wait();
+                    Log.Information("User {login} deleted.", user.Login);
+                }
+
+                Log.Information("Done.");
+            });
+
+            userSetMACCategoryCmd.SetAction(async parseResult =>
+            {
+                LocalAuthUser user = users[0]; // Gets first user (because there is only one)
+                if (parseResult.GetValue<bool>(additiveOpt))
+                {
+                    user.AddMACCategory((byte)
+                        ((category ?? throw new InvalidOperationException("Category cannot be null.")) - 1));
+                }
+                else user.MACCategory = category ?? user.MACCategory;
+
+                await localAuthStorage.SaveChangesAsync();
+                await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
+                Log.Information("Done. All active tokens of this user is removed.");
+            });
+
+            userSetMACLevelCmd.SetAction(async parseResult =>
+            {
+                LocalAuthUser user = users[0]; // Gets first user (because there is only one)
+                if (parseResult.GetValue<bool>(additiveOpt))
+                {
+                    user.AddMACLevel(level ?? user.MACLevel);
+                }
+                else user.MACLevel = level ?? user.MACLevel;
+
+                await localAuthStorage.SaveChangesAsync();
+                await tokenStorage.RevokeTokenKeys(user.Login); // Revokes all token keys for user
+                Log.Information("Done. All active tokens of this user is removed.");
+            });
+
+            userSetPasswordCmd.SetAction(_ =>
+            {
+                LocalAuthUser user = users[0];
+                Console.Write("Enter password: ");
+                var pass = ConsoleHelper.HiddenRead(); // Hides input
+                Console.WriteLine();
+                try
+                {
+                    if (pass.Length < 8) // If password is too short, return
+                    {
+                        Log.Error("Password is too short.");
+                        return;
+                    }
+
+                    localAuthStorage.ChangePassword(user, pass).Wait();
+                    Log.Information("Password changed for user {login}", user.Login);
+                }
+                catch (AggregateException ex)
+                {
+                    if (ex.InnerException is ArgumentException) // Show error if password change fails
+                    {
+                        Log.Error(ex.InnerException.Message);
+                    }
+                }
+            });
+
+            // Finds and add users to list by logins
+            void ForeachUserLogins(CommandResult parseResult)
+            {
+                users = new List<LocalAuthUser>(logins.Length);
+                foreach (string login in logins)
+                {
+                    var findedUser = localAuthStorage.FindUser(login).Result;
+                    if (findedUser is null)
+                    {
+                        parseResult.AddError($"Login {login} does not exists.");
+                        continue;
+                    }
+
+                    users.Add(findedUser);
+                }
             }
 
-            return logins;
+            // Gets logins from argument and shows error if fails
+            string[]? GetLogins(CommandResult parseResult)
+            {
+                try
+                {
+                    logins = parseResult.GetRequiredValue(loginsArg);
+                }
+                catch (InvalidOperationException)
+                {
+                    parseResult.AddError("Logins was not provided or invalid.");
+                    return null;
+                }
+
+                return logins;
+            }
+
+            #endregion
+
+            rootCmd.Parse(args).Invoke(); // Running command
         }
-        #endregion
-        
-        rootCmd.Parse(args).Invoke(); // Running command
+        finally
+        {
+            tokenStorage.Dispose();
+            localAuthStorage.Dispose();
+        }
+
         return bootServer;
     }
 
